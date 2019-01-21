@@ -1,0 +1,3 @@
+products:
+    publish:
+      group-id: com.palantir.spark-scheduler-lib

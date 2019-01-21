@@ -1,0 +1,52 @@
+version: 2
+
+### Docker images ###
+darwin-linux-no-cgo: &darwin-linux-no-cgo
+  working_directory: /go/src/github.com/palantir/k8s-spark-scheduler-lib
+  docker:
+    - image: nmiyake/go:go-darwin-linux-no-cgo-1.10.2-t129
+      environment:
+        CGO_ENABLED: 0
+
+### Shared test steps ###
+godel-root-cache-restore: &godel-root-cache-restore
+  restore_cache:
+    keys:
+      - godel-root-cache-{{ checksum "godelw" }}-{{ checksum "godel/config/godel.yml" }}-v1
+
+godel-root-cache-save: &godel-root-cache-save
+  save_cache:
+    key: godel-root-cache-{{ checksum "godelw" }}-{{ checksum "godel/config/godel.yml" }}-v1
+    paths:
+      - ~/.godel
+
+go-version: &go-version
+  run: go version
+
+godel-version: &godel-version
+  run: ./godelw version
+
+jobs:
+  verify:
+    <<: *darwin-linux-no-cgo
+    steps:
+      - checkout
+      - *go-version
+      - *godel-root-cache-restore
+      - *godel-version
+      - *godel-root-cache-save
+      - run: ./hack/verify-codegen.sh
+      - run: ./godelw verify --apply=false --skip-test --skip-check
+      - run: ./godelw check --parallel=false
+
+default-filters: &default-filters
+  filters:
+    tags:
+      only: /.*/
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - verify:
+          <<: *default-filters
