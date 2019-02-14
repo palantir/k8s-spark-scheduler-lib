@@ -41,9 +41,9 @@ func distributeExecutorsEvenly(
 	for _, name := range nodePriorityOrder {
 		availableNodes[name] = true
 	}
-	ret := make([]string, 0, executorCount)
+	executorNodes := make([]string, 0, executorCount)
 	if executorCount == 0 {
-		return ret, true
+		return executorNodes, true
 	}
 	for len(availableNodes) > 0 {
 		for _, n := range nodePriorityOrder {
@@ -55,12 +55,12 @@ func distributeExecutorsEvenly(
 				// can not allocate a resource to this node
 				delete(availableNodes, n)
 			} else {
-				ret = append(ret, n)
-				if len(ret) == executorCount {
-					return ret, true
+				executorNodes = append(executorNodes, n)
+				if len(executorNodes) == executorCount {
+					return executorNodes, true
 				}
 			}
 		}
 	}
-	return ret, false
+	return nil, false
 }
