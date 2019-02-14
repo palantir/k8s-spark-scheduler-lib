@@ -47,6 +47,10 @@ func distributeExecutorsEvenly(
 	}
 	for len(availableNodes) > 0 {
 		for _, n := range nodePriorityOrder {
+			if _, ok := availableNodes[n]; !ok {
+				continue
+			}
+
 			if reserved[n] == nil {
 				reserved[n] = resources.Zero()
 			}
