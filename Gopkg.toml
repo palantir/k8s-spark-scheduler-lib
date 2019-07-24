@@ -36,10 +36,15 @@ required = ["k8s.io/code-generator/cmd/client-gen"]
     name = "k8s.io/gengo"
     unused-packages = false
 
-[[constraint]]
-  version = "kubernetes-1.13.5"
-  name = "k8s.io/apiextensions-apiserver"
 ### begin go-dep-manager managed manifest ###
+
+[[constraint]]
+  name = "k8s.io/apiextensions-apiserver"
+  version = "kubernetes-1.14.3"
+
+[[constraint]]
+  name = "k8s.io/code-generator"
+  version = "kubernetes-1.14.3"
 
 [[constraint]]
   name = "k8s.io/api"
