@@ -26,6 +26,7 @@ type SparkBinPackFunction func(
 	driverResources, executorResources *resources.Resources,
 	executorCount int,
 	driverNodePriorityOrder, executorNodePriorityOrder []string,
+	nodeZoneLabels map[string]string,
 	availableResources resources.NodeGroupResources) (driverNode string, executorNodes []string, hasCapacity bool)
 
 // GenericBinPackFunction is a function type for assigning nodes to a batch of equivalent pods

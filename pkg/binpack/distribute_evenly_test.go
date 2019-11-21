@@ -37,6 +37,7 @@ func TestDistributeEvenly(t *testing.T) {
 		executorResources  *resources.Resources
 		numExecutors       int
 		availableResources resources.NodeGroupResources
+		nodeZoneLabels     map[string]string
 		nodePriorityOrder  []string
 		expectedDriverNode string
 		willFit            bool
@@ -115,6 +116,7 @@ func TestDistributeEvenly(t *testing.T) {
 				test.numExecutors,
 				test.nodePriorityOrder,
 				test.nodePriorityOrder,
+				test.nodeZoneLabels,
 				test.availableResources)
 			if ok != test.willFit {
 				t.Fatalf("mismatch in willFit, expected: %v, got: %v", test.willFit, ok)

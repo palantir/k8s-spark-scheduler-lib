@@ -22,7 +22,7 @@ import (
 	"github.com/palantir/k8s-spark-scheduler-lib/pkg/resources"
 )
 
-func TestTightlyPack(t *testing.T) {
+func TestAzAwareTightlyPack(t *testing.T) {
 	tests := []struct {
 		name               string
 		driverResources    *resources.Resources
@@ -35,20 +35,54 @@ func TestTightlyPack(t *testing.T) {
 		willFit            bool
 		expectedCounts     map[string]int
 	}{{
-		name:              "application fits",
+		name:              "picks the first zone when application fits entirely in either of the zones",
 		driverResources:   createResources(1, 3),
 		executorResources: createResources(2, 5),
 		numExecutors:      2,
 		availableResources: resources.NodeGroupResources(map[string]*resources.Resources{
-			"n1": createResources(5, 10),
-			"n2": createResources(4, 5),
+			"n1_z1": createResources(4, 5),
+			"n1_z2": createResources(4, 8),
+			"n2_z1": createResources(6, 15),
+			"n2_z2": createResources(6, 20),
 		}),
-		nodePriorityOrder:  []string{"n1", "n2"},
-		expectedDriverNode: "n1",
+		nodeZoneLabels:     map[string]string{"n1_z1": "z1", "n1_z2": "z2", "n2_z1": "z1", "n2_z2": "z2"},
+		nodePriorityOrder:  []string{"n1_z1", "n1_z2", "n2_z1", "n2_z2"},
+		expectedDriverNode: "n1_z1",
 		willFit:            true,
-		expectedCounts:     map[string]int{"n1": 1, "n2": 1},
+		expectedCounts:     map[string]int{"n2_z1": 2},
 	}, {
-		name:              "tightly packs",
+		name:              "picks the zone where application fits entirely",
+		driverResources:   createResources(1, 3),
+		executorResources: createResources(2, 5),
+		numExecutors:      2,
+		availableResources: resources.NodeGroupResources(map[string]*resources.Resources{
+			"n1_z1": createResources(4, 5),
+			"n1_z2": createResources(4, 8),
+			"n2_z2": createResources(6, 20),
+		}),
+		nodeZoneLabels:     map[string]string{"n1_z1": "z1", "n1_z2": "z2", "n2_z2": "z2"},
+		nodePriorityOrder:  []string{"n1_z1", "n1_z2", "n2_z2"},
+		expectedDriverNode: "n1_z2",
+		willFit:            true,
+		expectedCounts:     map[string]int{"n1_z2": 1, "n2_z2": 1},
+	}, {
+		name:              "falls back to cross zone allocation if application does not fit entirely in one zone",
+		driverResources:   createResources(1, 3),
+		executorResources: createResources(2, 5),
+		numExecutors:      2,
+		availableResources: resources.NodeGroupResources(map[string]*resources.Resources{
+			"n1_z1": createResources(4, 5),
+			"n2_z1": createResources(4, 6),
+			"n1_z2": createResources(4, 7),
+			"n2_z2": createResources(6, 7),
+		}),
+		nodeZoneLabels:     map[string]string{"n1_z1": "z1", "n1_z2": "z2", "n2_z1": "z1", "n2_z2": "z2"},
+		nodePriorityOrder:  []string{"n1_z1", "n2_z1", "n1_z2", "n2_z2"},
+		expectedDriverNode: "n1_z1",
+		willFit:            true,
+		expectedCounts:     map[string]int{"n2_z1": 1, "n1_z2": 1},
+	}, {
+		name:              "allocation works if zone labels are not available",
 		driverResources:   createResources(1, 3),
 		executorResources: createResources(2, 5),
 		numExecutors:      5,
@@ -56,65 +90,16 @@ func TestTightlyPack(t *testing.T) {
 			"n1": createResources(11, 28),
 			"n2": createResources(10, 20),
 		}),
+		nodeZoneLabels:     map[string]string{},
 		nodePriorityOrder:  []string{"n1", "n2"},
 		expectedDriverNode: "n1",
 		willFit:            true,
 		expectedCounts:     map[string]int{"n1": 5},
-	}, {
-		name:              "driver memory does not fit",
-		driverResources:   createResources(2, 4),
-		executorResources: createResources(1, 1),
-		numExecutors:      1,
-		availableResources: map[string]*resources.Resources{
-			"n1": createResources(2, 3),
-		},
-		nodePriorityOrder: []string{"n1"},
-		willFit:           false,
-		expectedCounts:    nil,
-	}, {
-		name:              "application perfectly fits",
-		driverResources:   createResources(1, 2),
-		executorResources: createResources(1, 1),
-		numExecutors:      40,
-		availableResources: map[string]*resources.Resources{
-			"n1": createResources(13, 14),
-			"n2": createResources(12, 12),
-			"n3": createResources(16, 16),
-		},
-		nodePriorityOrder:  []string{"n1", "n2", "n3"},
-		expectedDriverNode: "n1",
-		willFit:            true,
-		expectedCounts:     map[string]int{"n1": 12, "n2": 12, "n3": 16},
-	}, {
-		name:              "executor cpu do not fit",
-		driverResources:   createResources(1, 1),
-		executorResources: createResources(1, 2),
-		numExecutors:      8,
-		availableResources: map[string]*resources.Resources{
-			"n1": createResources(8, 20),
-		},
-		nodePriorityOrder: []string{"n1"},
-		willFit:           false,
-		expectedCounts:    nil,
-	}, {
-		name:              "Fits when cluster has more nodes than executors",
-		driverResources:   createResources(1, 2),
-		executorResources: createResources(2, 3),
-		numExecutors:      2,
-		availableResources: map[string]*resources.Resources{
-			"n1": createResources(8, 20),
-			"n2": createResources(8, 20),
-			"n3": createResources(8, 20),
-		},
-		nodePriorityOrder:  []string{"n1", "n2", "n3"},
-		expectedDriverNode: "n1",
-		willFit:            true,
-		expectedCounts:     nil,
 	}}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			driver, executors, ok := TightlyPack(
+			driver, executors, ok := AzAwareTightlyPack(
 				context.Background(),
 				test.driverResources,
 				test.executorResources,

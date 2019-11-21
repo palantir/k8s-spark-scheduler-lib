@@ -27,6 +27,7 @@ var TightlyPack = SparkBinPackFunction(func(
 	driverResources, executorResources *resources.Resources,
 	executorCount int,
 	driverNodePriorityOrder, executorNodePriorityOrder []string,
+	nodeZoneLabels map[string]string,
 	availableResources resources.NodeGroupResources) (string, []string, bool) {
 	return SparkBinPack(ctx, driverResources, executorResources, executorCount, driverNodePriorityOrder, executorNodePriorityOrder, availableResources, tightlyPackExecutors)
 })
