@@ -29,27 +29,32 @@ func createResources(cpu, memory int64) *resources.Resources {
 		Memory: *resource.NewQuantity(memory, resource.BinarySI),
 	}
 }
+func createSchedulingMetadata(cpu, memory int64, zoneLabel string) *resources.NodeSchedulingMetadata {
+	return &resources.NodeSchedulingMetadata{
+		AvailableResources: createResources(cpu, memory),
+		ZoneLabel: zoneLabel,
+	}
+}
 
 func TestDistributeEvenly(t *testing.T) {
 	tests := []struct {
-		name               string
-		driverResources    *resources.Resources
-		executorResources  *resources.Resources
-		numExecutors       int
-		availableResources resources.NodeGroupResources
-		nodeZoneLabels     map[string]string
-		nodePriorityOrder  []string
-		expectedDriverNode string
-		willFit            bool
-		expectedCounts     map[string]int
+		name                    string
+		driverResources         *resources.Resources
+		executorResources       *resources.Resources
+		numExecutors            int
+		nodesSchedulingMetadata resources.NodeGroupSchedulingMetadata
+		nodePriorityOrder       []string
+		expectedDriverNode      string
+		willFit                 bool
+		expectedCounts          map[string]int
 	}{{
 		name:              "application fits",
 		driverResources:   createResources(1, 3),
 		executorResources: createResources(2, 5),
 		numExecutors:      2,
-		availableResources: resources.NodeGroupResources(map[string]*resources.Resources{
-			"n1": createResources(5, 10),
-			"n2": createResources(4, 5),
+		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
+			"n1": createSchedulingMetadata(5, 10, "zone1"),
+			"n2": createSchedulingMetadata(4, 5, "zone1"),
 		}),
 		nodePriorityOrder:  []string{"n1", "n2"},
 		expectedDriverNode: "n1",
@@ -60,9 +65,9 @@ func TestDistributeEvenly(t *testing.T) {
 		driverResources:   createResources(2, 4),
 		executorResources: createResources(1, 1),
 		numExecutors:      1,
-		availableResources: map[string]*resources.Resources{
-			"n1": createResources(2, 3),
-		},
+		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
+			"n1": createSchedulingMetadata(2, 3, "zone1"),
+		}),
 		nodePriorityOrder: []string{"n1"},
 		willFit:           false,
 		expectedCounts:    nil,
@@ -71,11 +76,11 @@ func TestDistributeEvenly(t *testing.T) {
 		driverResources:   createResources(1, 2),
 		executorResources: createResources(1, 1),
 		numExecutors:      40,
-		availableResources: map[string]*resources.Resources{
-			"n1": createResources(13, 14),
-			"n2": createResources(12, 12),
-			"n3": createResources(16, 16),
-		},
+		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
+			"n1": createSchedulingMetadata(13, 14, "zone1"),
+			"n2": createSchedulingMetadata(12, 12, "zone1"),
+			"n3": createSchedulingMetadata(16, 16, "zone1"),
+		}),
 		nodePriorityOrder:  []string{"n1", "n2", "n3"},
 		expectedDriverNode: "n1",
 		willFit:            true,
@@ -85,9 +90,11 @@ func TestDistributeEvenly(t *testing.T) {
 		driverResources:   createResources(1, 1),
 		executorResources: createResources(1, 2),
 		numExecutors:      8,
-		availableResources: map[string]*resources.Resources{
-			"n1": createResources(8, 20),
-		},
+		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
+			"n1": {
+				AvailableResources: createResources(8, 20),
+			},
+		}),
 		nodePriorityOrder: []string{"n1"},
 		willFit:           false,
 		expectedCounts:    nil,
@@ -96,11 +103,11 @@ func TestDistributeEvenly(t *testing.T) {
 		driverResources:   createResources(1, 2),
 		executorResources: createResources(2, 3),
 		numExecutors:      2,
-		availableResources: map[string]*resources.Resources{
-			"n1": createResources(8, 20),
-			"n2": createResources(8, 20),
-			"n3": createResources(8, 20),
-		},
+		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
+			"n1": createSchedulingMetadata(8, 20, "zone1"),
+			"n2": createSchedulingMetadata(8, 20, "zone1"),
+			"n3": createSchedulingMetadata(8, 20, "zone1"),
+		}),
 		nodePriorityOrder:  []string{"n1", "n2", "n3"},
 		expectedDriverNode: "n1",
 		willFit:            true,
@@ -116,8 +123,7 @@ func TestDistributeEvenly(t *testing.T) {
 				test.numExecutors,
 				test.nodePriorityOrder,
 				test.nodePriorityOrder,
-				test.nodeZoneLabels,
-				test.availableResources)
+				test.nodesSchedulingMetadata)
 			if ok != test.willFit {
 				t.Fatalf("mismatch in willFit, expected: %v, got: %v", test.willFit, ok)
 			}

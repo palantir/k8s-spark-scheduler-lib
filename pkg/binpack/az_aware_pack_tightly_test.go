@@ -24,28 +24,26 @@ import (
 
 func TestAzAwareTightlyPack(t *testing.T) {
 	tests := []struct {
-		name               string
-		driverResources    *resources.Resources
-		executorResources  *resources.Resources
-		numExecutors       int
-		availableResources resources.NodeGroupResources
-		nodeZoneLabels     map[string]string
-		nodePriorityOrder  []string
-		expectedDriverNode string
-		willFit            bool
-		expectedCounts     map[string]int
+		name                    string
+		driverResources         *resources.Resources
+		executorResources       *resources.Resources
+		numExecutors            int
+		nodesSchedulingMetadata resources.NodeGroupSchedulingMetadata
+		nodePriorityOrder       []string
+		expectedDriverNode      string
+		willFit                 bool
+		expectedCounts          map[string]int
 	}{{
 		name:              "picks the first zone when application fits entirely in either of the zones",
 		driverResources:   createResources(1, 3),
 		executorResources: createResources(2, 5),
 		numExecutors:      2,
-		availableResources: resources.NodeGroupResources(map[string]*resources.Resources{
-			"n1_z1": createResources(4, 5),
-			"n1_z2": createResources(4, 8),
-			"n2_z1": createResources(6, 15),
-			"n2_z2": createResources(6, 20),
+		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
+			"n1_z1": createSchedulingMetadata(4, 5, "z1"),
+			"n1_z2": createSchedulingMetadata(4, 8, "z2"),
+			"n2_z1": createSchedulingMetadata(6, 15, "z1"),
+			"n2_z2": createSchedulingMetadata(6, 20, "z2"),
 		}),
-		nodeZoneLabels:     map[string]string{"n1_z1": "z1", "n1_z2": "z2", "n2_z1": "z1", "n2_z2": "z2"},
 		nodePriorityOrder:  []string{"n1_z1", "n1_z2", "n2_z1", "n2_z2"},
 		expectedDriverNode: "n1_z1",
 		willFit:            true,
@@ -55,12 +53,11 @@ func TestAzAwareTightlyPack(t *testing.T) {
 		driverResources:   createResources(1, 3),
 		executorResources: createResources(2, 5),
 		numExecutors:      2,
-		availableResources: resources.NodeGroupResources(map[string]*resources.Resources{
-			"n1_z1": createResources(4, 5),
-			"n1_z2": createResources(4, 8),
-			"n2_z2": createResources(6, 20),
+		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
+			"n1_z1": createSchedulingMetadata(4, 5, "z1"),
+			"n1_z2": createSchedulingMetadata(4, 8, "z2"),
+			"n2_z2": createSchedulingMetadata(6, 20, "z2"),
 		}),
-		nodeZoneLabels:     map[string]string{"n1_z1": "z1", "n1_z2": "z2", "n2_z2": "z2"},
 		nodePriorityOrder:  []string{"n1_z1", "n1_z2", "n2_z2"},
 		expectedDriverNode: "n1_z2",
 		willFit:            true,
@@ -70,31 +67,16 @@ func TestAzAwareTightlyPack(t *testing.T) {
 		driverResources:   createResources(1, 3),
 		executorResources: createResources(2, 5),
 		numExecutors:      2,
-		availableResources: resources.NodeGroupResources(map[string]*resources.Resources{
-			"n1_z1": createResources(4, 5),
-			"n2_z1": createResources(4, 6),
-			"n1_z2": createResources(4, 7),
-			"n2_z2": createResources(6, 7),
+		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
+			"n1_z1": createSchedulingMetadata(4, 5, "z1"),
+			"n2_z1": createSchedulingMetadata(4, 6, "z1"),
+			"n1_z2": createSchedulingMetadata(4, 7, "z2"),
+			"n2_z2": createSchedulingMetadata(6, 7, "z2"),
 		}),
-		nodeZoneLabels:     map[string]string{"n1_z1": "z1", "n1_z2": "z2", "n2_z1": "z1", "n2_z2": "z2"},
 		nodePriorityOrder:  []string{"n1_z1", "n2_z1", "n1_z2", "n2_z2"},
 		expectedDriverNode: "n1_z1",
 		willFit:            true,
 		expectedCounts:     map[string]int{"n2_z1": 1, "n1_z2": 1},
-	}, {
-		name:              "allocation works if zone labels are not available",
-		driverResources:   createResources(1, 3),
-		executorResources: createResources(2, 5),
-		numExecutors:      5,
-		availableResources: resources.NodeGroupResources(map[string]*resources.Resources{
-			"n1": createResources(11, 28),
-			"n2": createResources(10, 20),
-		}),
-		nodeZoneLabels:     map[string]string{},
-		nodePriorityOrder:  []string{"n1", "n2"},
-		expectedDriverNode: "n1",
-		willFit:            true,
-		expectedCounts:     map[string]int{"n1": 5},
 	}}
 
 	for _, test := range tests {
@@ -106,8 +88,7 @@ func TestAzAwareTightlyPack(t *testing.T) {
 				test.numExecutors,
 				test.nodePriorityOrder,
 				test.nodePriorityOrder,
-				test.nodeZoneLabels,
-				test.availableResources)
+				test.nodesSchedulingMetadata)
 			if ok != test.willFit {
 				t.Fatalf("mismatch in willFit, expected: %v, got: %v", test.willFit, ok)
 			}
