@@ -22,7 +22,7 @@ import (
 	"github.com/palantir/k8s-spark-scheduler-lib/pkg/resources"
 )
 
-func TestTightlyPack(t *testing.T) {
+func TestAzAwareTightlyPack(t *testing.T) {
 	tests := []struct {
 		name                    string
 		driverResources         *resources.Resources
@@ -34,86 +34,54 @@ func TestTightlyPack(t *testing.T) {
 		willFit                 bool
 		expectedCounts          map[string]int
 	}{{
-		name:              "application fits",
+		name:              "picks the first zone when application fits entirely in either of the zones",
 		driverResources:   createResources(1, 3),
 		executorResources: createResources(2, 5),
 		numExecutors:      2,
 		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
-			"n1": createSchedulingMetadata(5, 10, "zone1"),
-			"n2": createSchedulingMetadata(4, 5, "zone1"),
+			"n1_z1": createSchedulingMetadata(4, 5, "z1"),
+			"n1_z2": createSchedulingMetadata(4, 8, "z2"),
+			"n2_z1": createSchedulingMetadata(6, 15, "z1"),
+			"n2_z2": createSchedulingMetadata(6, 20, "z2"),
 		}),
-		nodePriorityOrder:  []string{"n1", "n2"},
-		expectedDriverNode: "n1",
+		nodePriorityOrder:  []string{"n1_z1", "n1_z2", "n2_z1", "n2_z2"},
+		expectedDriverNode: "n1_z1",
 		willFit:            true,
-		expectedCounts:     map[string]int{"n1": 1, "n2": 1},
+		expectedCounts:     map[string]int{"n2_z1": 2},
 	}, {
-		name:              "tightly packs",
+		name:              "picks the zone where application fits entirely",
 		driverResources:   createResources(1, 3),
 		executorResources: createResources(2, 5),
-		numExecutors:      5,
-		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
-			"n1": createSchedulingMetadata(11, 28, "zone1"),
-			"n2": createSchedulingMetadata(10, 20, "zone1"),
-		}),
-		nodePriorityOrder:  []string{"n1", "n2"},
-		expectedDriverNode: "n1",
-		willFit:            true,
-		expectedCounts:     map[string]int{"n1": 5},
-	}, {
-		name:              "driver memory does not fit",
-		driverResources:   createResources(2, 4),
-		executorResources: createResources(1, 1),
-		numExecutors:      1,
-		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
-			"n1": createSchedulingMetadata(2, 3, "zone1"),
-		}),
-		nodePriorityOrder: []string{"n1"},
-		willFit:           false,
-		expectedCounts:    nil,
-	}, {
-		name:              "application perfectly fits",
-		driverResources:   createResources(1, 2),
-		executorResources: createResources(1, 1),
-		numExecutors:      40,
-		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
-			"n1": createSchedulingMetadata(13, 14, "zone1"),
-			"n2": createSchedulingMetadata(12, 12, "zone1"),
-			"n3": createSchedulingMetadata(16, 16, "zone1"),
-		}),
-		nodePriorityOrder:  []string{"n1", "n2", "n3"},
-		expectedDriverNode: "n1",
-		willFit:            true,
-		expectedCounts:     map[string]int{"n1": 12, "n2": 12, "n3": 16},
-	}, {
-		name:              "executor cpu do not fit",
-		driverResources:   createResources(1, 1),
-		executorResources: createResources(1, 2),
-		numExecutors:      8,
-		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
-			"n1": createSchedulingMetadata(8, 20, "zone1"),
-		}),
-		nodePriorityOrder: []string{"n1"},
-		willFit:           false,
-		expectedCounts:    nil,
-	}, {
-		name:              "Fits when cluster has more nodes than executors",
-		driverResources:   createResources(1, 2),
-		executorResources: createResources(2, 3),
 		numExecutors:      2,
 		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
-			"n1": createSchedulingMetadata(8, 20, "zone1"),
-			"n2": createSchedulingMetadata(8, 20, "zone1"),
-			"n3": createSchedulingMetadata(8, 20, "zone1"),
+			"n1_z1": createSchedulingMetadata(4, 5, "z1"),
+			"n1_z2": createSchedulingMetadata(4, 8, "z2"),
+			"n2_z2": createSchedulingMetadata(6, 20, "z2"),
 		}),
-		nodePriorityOrder:  []string{"n1", "n2", "n3"},
-		expectedDriverNode: "n1",
+		nodePriorityOrder:  []string{"n1_z1", "n1_z2", "n2_z2"},
+		expectedDriverNode: "n1_z2",
 		willFit:            true,
-		expectedCounts:     nil,
+		expectedCounts:     map[string]int{"n1_z2": 1, "n2_z2": 1},
+	}, {
+		name:              "falls back to cross zone allocation if application does not fit entirely in one zone",
+		driverResources:   createResources(1, 3),
+		executorResources: createResources(2, 5),
+		numExecutors:      2,
+		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
+			"n1_z1": createSchedulingMetadata(4, 5, "z1"),
+			"n2_z1": createSchedulingMetadata(4, 6, "z1"),
+			"n1_z2": createSchedulingMetadata(4, 7, "z2"),
+			"n2_z2": createSchedulingMetadata(6, 7, "z2"),
+		}),
+		nodePriorityOrder:  []string{"n1_z1", "n2_z1", "n1_z2", "n2_z2"},
+		expectedDriverNode: "n1_z1",
+		willFit:            true,
+		expectedCounts:     map[string]int{"n2_z1": 1, "n1_z2": 1},
 	}}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			driver, executors, ok := TightlyPack(
+			driver, executors, ok := AzAwareTightlyPack(
 				context.Background(),
 				test.driverResources,
 				test.executorResources,
