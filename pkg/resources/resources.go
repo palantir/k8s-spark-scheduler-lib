@@ -68,8 +68,8 @@ func NodeSchedulingMetadataForNodes(nodes []*v1.Node, currentUsage NodeGroupReso
 		nodeGroupSchedulingMetadata[node.Name] = &NodeSchedulingMetadata{
 			AvailableResources: subtractFromResourceList(node.Status.Allocatable, currentUsageForNode),
 			CreationTimestamp:  node.CreationTimestamp.Time,
-			ZoneLabel: zoneLabel,
-			Unschedulable: node.Spec.Unschedulable,
+			ZoneLabel:          zoneLabel,
+			Unschedulable:      node.Spec.Unschedulable,
 		}
 	}
 	return nodeGroupSchedulingMetadata

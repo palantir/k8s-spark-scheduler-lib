@@ -49,10 +49,7 @@ func tightlyPackExecutors(
 		for {
 			reservedResources[n].Add(executorResources)
 			nodeSchedulingMetadata, ok := nodesSchedulingMetadata[n]
-			if !ok {
-				break
-			}
-			if reservedResources[n].GreaterThan(nodeSchedulingMetadata.AvailableResources) {
+			if !ok || reservedResources[n].GreaterThan(nodeSchedulingMetadata.AvailableResources) {
 				break
 			}
 			executorNodes = append(executorNodes, n)

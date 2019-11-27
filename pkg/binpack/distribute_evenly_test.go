@@ -32,7 +32,7 @@ func createResources(cpu, memory int64) *resources.Resources {
 func createSchedulingMetadata(cpu, memory int64, zoneLabel string) *resources.NodeSchedulingMetadata {
 	return &resources.NodeSchedulingMetadata{
 		AvailableResources: createResources(cpu, memory),
-		ZoneLabel: zoneLabel,
+		ZoneLabel:          zoneLabel,
 	}
 }
 
