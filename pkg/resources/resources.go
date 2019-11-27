@@ -15,10 +15,11 @@
 package resources
 
 import (
+	"time"
+
 	"github.com/palantir/k8s-spark-scheduler-lib/pkg/apis/sparkscheduler/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"time"
 )
 
 const (
@@ -78,7 +79,7 @@ func NodeSchedulingMetadataForNodes(nodes []*v1.Node, currentUsage NodeGroupReso
 // NodeGroupResources represents resources for a group of nodes
 type NodeGroupResources map[string]*Resources
 
-// NodeGroupSchedulingMetadata represents SchedulingMetadata for a group of nodes
+// NodeGroupSchedulingMetadata represents NodeSchedulingMetadata for a group of nodes
 type NodeGroupSchedulingMetadata map[string]*NodeSchedulingMetadata
 
 // Add adds all resources in other into the receiver, modifies receiver
@@ -126,6 +127,7 @@ type Resources struct {
 	Memory resource.Quantity
 }
 
+// NodeSchedulingMetadata represents various parameters of a node that are considered in scheduling decisions
 type NodeSchedulingMetadata struct {
 	AvailableResources *Resources
 	CreationTimestamp  time.Time
