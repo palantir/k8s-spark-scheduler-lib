@@ -7,6 +7,7 @@ darwin-linux-no-cgo: &darwin-linux-no-cgo
     - image: nmiyake/go:go-darwin-linux-no-cgo-1.10.2-t129
       environment:
         CGO_ENABLED: 0
+        ENABLE_GO_MODULES: true
 
 ### Shared test steps ###
 godel-root-cache-restore: &godel-root-cache-restore
