@@ -13,6 +13,7 @@ import (
 	"go/parser"
 	"go/token"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 	"path"
@@ -65,19 +66,6 @@ func importGroup(env *ProcessEnv, importPath string) int {
 		}
 	}
 	return 0
-}
-
-type importFixType int
-
-const (
-	addImport importFixType = iota
-	deleteImport
-	setImportName
-)
-
-type importFix struct {
-	info    importInfo
-	fixType importFixType
 }
 
 // An importInfo represents a single import statement.
@@ -258,12 +246,6 @@ type pass struct {
 
 // loadPackageNames saves the package names for everything referenced by imports.
 func (p *pass) loadPackageNames(imports []*importInfo) error {
-	if p.env.Debug {
-		p.env.Logf("loading package names for %v packages", len(imports))
-		defer func() {
-			p.env.Logf("done loading package names for %v packages", len(imports))
-		}()
-	}
 	var unknown []string
 	for _, imp := range imports {
 		if _, ok := p.knownPackages[imp.importPath]; ok {
@@ -272,7 +254,7 @@ func (p *pass) loadPackageNames(imports []*importInfo) error {
 		unknown = append(unknown, imp.importPath)
 	}
 
-	names, err := p.env.GetResolver().loadPackageNames(unknown, p.srcDir)
+	names, err := p.env.getResolver().loadPackageNames(unknown, p.srcDir)
 	if err != nil {
 		return err
 	}
@@ -303,7 +285,7 @@ func (p *pass) importIdentifier(imp *importInfo) string {
 // load reads in everything necessary to run a pass, and reports whether the
 // file already has all the imports it needs. It fills in p.missingRefs with the
 // file's missing symbols, if any, or removes unused imports if not.
-func (p *pass) load() ([]*importFix, bool) {
+func (p *pass) load() bool {
 	p.knownPackages = map[string]*packageInfo{}
 	p.missingRefs = references{}
 	p.existingImports = map[string]*importInfo{}
@@ -331,9 +313,9 @@ func (p *pass) load() ([]*importFix, bool) {
 		err := p.loadPackageNames(append(imports, p.candidates...))
 		if err != nil {
 			if p.env.Debug {
-				p.env.Logf("loading package names: %v", err)
+				log.Printf("loading package names: %v", err)
 			}
-			return nil, false
+			return false
 		}
 	}
 	for _, imp := range imports {
@@ -352,16 +334,16 @@ func (p *pass) load() ([]*importFix, bool) {
 		}
 	}
 	if len(p.missingRefs) != 0 {
-		return nil, false
+		return false
 	}
 
 	return p.fix()
 }
 
 // fix attempts to satisfy missing imports using p.candidates. If it finds
-// everything, or if p.lastTry is true, it updates fixes to add the imports it found,
-// delete anything unused, and update import names, and returns true.
-func (p *pass) fix() ([]*importFix, bool) {
+// everything, or if p.lastTry is true, it adds the imports it found,
+// removes anything unused, and returns true.
+func (p *pass) fix() bool {
 	// Find missing imports.
 	var selected []*importInfo
 	for left, rights := range p.missingRefs {
@@ -371,11 +353,10 @@ func (p *pass) fix() ([]*importFix, bool) {
 	}
 
 	if !p.lastTry && len(selected) != len(p.missingRefs) {
-		return nil, false
+		return false
 	}
 
 	// Found everything, or giving up. Add the new imports and remove any unused.
-	var fixes []*importFix
 	for _, imp := range p.existingImports {
 		// We deliberately ignore globals here, because we can't be sure
 		// they're in the same package. People do things like put multiple
@@ -383,77 +364,27 @@ func (p *pass) fix() ([]*importFix, bool) {
 		// remove imports if they happen to have the same name as a var in
 		// a different package.
 		if _, ok := p.allRefs[p.importIdentifier(imp)]; !ok {
-			fixes = append(fixes, &importFix{
-				info:    *imp,
-				fixType: deleteImport,
-			})
-			continue
-		}
-
-		// An existing import may need to update its import name to be correct.
-		if name := p.importSpecName(imp); name != imp.name {
-			fixes = append(fixes, &importFix{
-				info: importInfo{
-					name:       name,
-					importPath: imp.importPath,
-				},
-				fixType: setImportName,
-			})
+			astutil.DeleteNamedImport(p.fset, p.f, imp.name, imp.importPath)
 		}
 	}
 
 	for _, imp := range selected {
-		fixes = append(fixes, &importFix{
-			info: importInfo{
-				name:       p.importSpecName(imp),
-				importPath: imp.importPath,
-			},
-			fixType: addImport,
-		})
+		astutil.AddNamedImport(p.fset, p.f, imp.name, imp.importPath)
 	}
 
-	return fixes, true
-}
-
-// importSpecName gets the import name of imp in the import spec.
-//
-// When the import identifier matches the assumed import name, the import name does
-// not appear in the import spec.
-func (p *pass) importSpecName(imp *importInfo) string {
-	// If we did not load the real package names, or the name is already set,
-	// we just return the existing name.
-	if !p.loadRealPackageNames || imp.name != "" {
-		return imp.name
-	}
-
-	ident := p.importIdentifier(imp)
-	if ident == importPathToAssumedName(imp.importPath) {
-		return "" // ident not needed since the assumed and real names are the same.
-	}
-	return ident
-}
-
-// apply will perform the fixes on f in order.
-func apply(fset *token.FileSet, f *ast.File, fixes []*importFix) bool {
-	for _, fix := range fixes {
-		switch fix.fixType {
-		case deleteImport:
-			astutil.DeleteNamedImport(fset, f, fix.info.name, fix.info.importPath)
-		case addImport:
-			astutil.AddNamedImport(fset, f, fix.info.name, fix.info.importPath)
-		case setImportName:
-			// Find the matching import path and change the name.
-			for _, spec := range f.Imports {
-				path := strings.Trim(spec.Path.Value, `""`)
-				if path == fix.info.importPath {
-					spec.Name = &ast.Ident{
-						Name:    fix.info.name,
-						NamePos: spec.Pos(),
-					}
-				}
+	if p.loadRealPackageNames {
+		for _, imp := range p.f.Imports {
+			if imp.Name != nil {
+				continue
+			}
+			path := strings.Trim(imp.Path.Value, `""`)
+			ident := p.importIdentifier(&importInfo{importPath: path})
+			if ident != importPathToAssumedName(path) {
+				imp.Name = &ast.Ident{Name: ident, NamePos: imp.Pos()}
 			}
 		}
 	}
+
 	return true
 }
 
@@ -506,24 +437,13 @@ func (p *pass) addCandidate(imp *importInfo, pkg *packageInfo) {
 var fixImports = fixImportsDefault
 
 func fixImportsDefault(fset *token.FileSet, f *ast.File, filename string, env *ProcessEnv) error {
-	fixes, err := getFixes(fset, f, filename, env)
+	abs, err := filepath.Abs(filename)
 	if err != nil {
 		return err
 	}
-	apply(fset, f, fixes)
-	return err
-}
-
-// getFixes gets the getFixes that need to be made to f in order to fix the imports.
-// It does not modify the ast.
-func getFixes(fset *token.FileSet, f *ast.File, filename string, env *ProcessEnv) ([]*importFix, error) {
-	abs, err := filepath.Abs(filename)
-	if err != nil {
-		return nil, err
-	}
 	srcDir := filepath.Dir(abs)
 	if env.Debug {
-		env.Logf("fixImports(filename=%q), abs=%q, srcDir=%q ...", filename, abs, srcDir)
+		log.Printf("fixImports(filename=%q), abs=%q, srcDir=%q ...", filename, abs, srcDir)
 	}
 
 	// First pass: looking only at f, and using the naive algorithm to
@@ -531,8 +451,8 @@ func getFixes(fset *token.FileSet, f *ast.File, filename string, env *ProcessEnv
 	// complete. We can't add any imports yet, because we don't know
 	// if missing references are actually package vars.
 	p := &pass{fset: fset, f: f, srcDir: srcDir}
-	if fixes, done := p.load(); done {
-		return fixes, nil
+	if p.load() {
+		return nil
 	}
 
 	otherFiles := parseOtherFiles(fset, srcDir, filename)
@@ -540,15 +460,15 @@ func getFixes(fset *token.FileSet, f *ast.File, filename string, env *ProcessEnv
 	// Second pass: add information from other files in the same package,
 	// like their package vars and imports.
 	p.otherFiles = otherFiles
-	if fixes, done := p.load(); done {
-		return fixes, nil
+	if p.load() {
+		return nil
 	}
 
 	// Now we can try adding imports from the stdlib.
 	p.assumeSiblingImportsValid()
 	addStdlibCandidates(p, p.missingRefs)
-	if fixes, done := p.fix(); done {
-		return fixes, nil
+	if p.fix() {
+		return nil
 	}
 
 	// Third pass: get real package names where we had previously used
@@ -557,25 +477,25 @@ func getFixes(fset *token.FileSet, f *ast.File, filename string, env *ProcessEnv
 	p = &pass{fset: fset, f: f, srcDir: srcDir, env: env}
 	p.loadRealPackageNames = true
 	p.otherFiles = otherFiles
-	if fixes, done := p.load(); done {
-		return fixes, nil
+	if p.load() {
+		return nil
 	}
 
 	addStdlibCandidates(p, p.missingRefs)
 	p.assumeSiblingImportsValid()
-	if fixes, done := p.fix(); done {
-		return fixes, nil
+	if p.fix() {
+		return nil
 	}
 
 	// Go look for candidates in $GOPATH, etc. We don't necessarily load
 	// the real exports of sibling imports, so keep assuming their contents.
 	if err := addExternalCandidates(p, p.missingRefs, filename); err != nil {
-		return nil, err
+		return err
 	}
 
 	p.lastTry = true
-	fixes, _ := p.fix()
-	return fixes, nil
+	p.fix()
+	return nil
 }
 
 // ProcessEnv contains environment variables and settings that affect the use of
@@ -592,10 +512,7 @@ type ProcessEnv struct {
 	// If true, use go/packages regardless of the environment.
 	ForceGoPackages bool
 
-	// Logf is the default logger for the ProcessEnv.
-	Logf func(format string, args ...interface{})
-
-	resolver Resolver
+	resolver resolver
 }
 
 func (e *ProcessEnv) env() []string {
@@ -617,22 +534,19 @@ func (e *ProcessEnv) env() []string {
 	return env
 }
 
-func (e *ProcessEnv) GetResolver() Resolver {
+func (e *ProcessEnv) getResolver() resolver {
 	if e.resolver != nil {
 		return e.resolver
 	}
 	if e.ForceGoPackages {
-		e.resolver = &goPackagesResolver{env: e}
-		return e.resolver
+		return &goPackagesResolver{env: e}
 	}
 
 	out, err := e.invokeGo("env", "GOMOD")
 	if err != nil || len(bytes.TrimSpace(out.Bytes())) == 0 {
-		e.resolver = &gopathResolver{env: e}
-		return e.resolver
+		return &gopathResolver{env: e}
 	}
-	e.resolver = &ModuleResolver{env: e}
-	return e.resolver
+	return &moduleResolver{env: e}
 }
 
 func (e *ProcessEnv) newPackagesConfig(mode packages.LoadMode) *packages.Config {
@@ -660,7 +574,7 @@ func (e *ProcessEnv) invokeGo(args ...string) (*bytes.Buffer, error) {
 	cmd.Dir = e.WorkingDir
 
 	if e.Debug {
-		defer func(start time.Time) { e.Logf("%s for %v", time.Since(start), cmdDebugStr(cmd)) }(time.Now())
+		defer func(start time.Time) { log.Printf("%s for %v", time.Since(start), cmdDebugStr(cmd)) }(time.Now())
 	}
 	if err := cmd.Run(); err != nil {
 		return nil, fmt.Errorf("running go: %v (stderr:\n%s)", err, stderr)
@@ -700,15 +614,15 @@ func addStdlibCandidates(pass *pass, refs references) {
 	}
 }
 
-// A Resolver does the build-system-specific parts of goimports.
-type Resolver interface {
+// A resolver does the build-system-specific parts of goimports.
+type resolver interface {
 	// loadPackageNames loads the package names in importPaths.
 	loadPackageNames(importPaths []string, srcDir string) (map[string]string, error)
 	// scan finds (at least) the packages satisfying refs. The returned slice is unordered.
 	scan(refs references) ([]*pkg, error)
 }
 
-// gopackagesResolver implements resolver for GOPATH and module workspaces using go/packages.
+// gopathResolver implements resolver for GOPATH and module workspaces using go/packages.
 type goPackagesResolver struct {
 	env *ProcessEnv
 }
@@ -758,7 +672,7 @@ func (r *goPackagesResolver) scan(refs references) ([]*pkg, error) {
 }
 
 func addExternalCandidates(pass *pass, refs references, filename string) error {
-	dirScan, err := pass.env.GetResolver().scan(refs)
+	dirScan, err := pass.env.getResolver().scan(refs)
 	if err != nil {
 		return err
 	}
@@ -785,7 +699,7 @@ func addExternalCandidates(pass *pass, refs references, filename string) error {
 		go func(pkgName string, symbols map[string]bool) {
 			defer wg.Done()
 
-			found, err := findImport(ctx, pass, dirScan, pkgName, symbols, filename)
+			found, err := findImport(ctx, pass.env, dirScan, pkgName, symbols, filename)
 
 			if err != nil {
 				firstErrOnce.Do(func() {
@@ -1026,7 +940,7 @@ func VendorlessPath(ipath string) string {
 // It returns nil on error or if the package name in dir does not match expectPackage.
 func loadExports(ctx context.Context, env *ProcessEnv, expectPackage string, pkg *pkg) (map[string]bool, error) {
 	if env.Debug {
-		env.Logf("loading exports in dir %s (seeking package %s)", pkg.dir, expectPackage)
+		log.Printf("loading exports in dir %s (seeking package %s)", pkg.dir, expectPackage)
 	}
 	if pkg.goPackage != nil {
 		exports := map[string]bool{}
@@ -1104,14 +1018,14 @@ func loadExports(ctx context.Context, env *ProcessEnv, expectPackage string, pkg
 			exportList = append(exportList, k)
 		}
 		sort.Strings(exportList)
-		env.Logf("loaded exports in dir %v (package %v): %v", pkg.dir, expectPackage, strings.Join(exportList, ", "))
+		log.Printf("loaded exports in dir %v (package %v): %v", pkg.dir, expectPackage, strings.Join(exportList, ", "))
 	}
 	return exports, nil
 }
 
 // findImport searches for a package with the given symbols.
 // If no package is found, findImport returns ("", false, nil)
-func findImport(ctx context.Context, pass *pass, dirScan []*pkg, pkgName string, symbols map[string]bool, filename string) (*pkg, error) {
+func findImport(ctx context.Context, env *ProcessEnv, dirScan []*pkg, pkgName string, symbols map[string]bool, filename string) (*pkg, error) {
 	pkgDir, err := filepath.Abs(filename)
 	if err != nil {
 		return nil, err
@@ -1121,12 +1035,7 @@ func findImport(ctx context.Context, pass *pass, dirScan []*pkg, pkgName string,
 	// Find candidate packages, looking only at their directory names first.
 	var candidates []pkgDistance
 	for _, pkg := range dirScan {
-		if pkg.dir == pkgDir && pass.f.Name.Name == pkgName {
-			// The candidate is in the same directory and has the
-			// same package name. Don't try to import ourselves.
-			continue
-		}
-		if pkgIsCandidate(filename, pkgName, pkg) {
+		if pkg.dir != pkgDir && pkgIsCandidate(filename, pkgName, pkg) {
 			candidates = append(candidates, pkgDistance{
 				pkg:      pkg,
 				distance: distance(pkgDir, pkg.dir),
@@ -1139,9 +1048,9 @@ func findImport(ctx context.Context, pass *pass, dirScan []*pkg, pkgName string,
 	// ones.  Note that this sorts by the de-vendored name, so
 	// there's no "penalty" for vendoring.
 	sort.Sort(byDistanceOrImportPathShortLength(candidates))
-	if pass.env.Debug {
+	if env.Debug {
 		for i, c := range candidates {
-			pass.env.Logf("%s candidate %d/%d: %v in %v", pkgName, i+1, len(candidates), c.pkg.importPathShort, c.pkg.dir)
+			log.Printf("%s candidate %d/%d: %v in %v", pkgName, i+1, len(candidates), c.pkg.importPathShort, c.pkg.dir)
 		}
 	}
 
@@ -1178,10 +1087,10 @@ func findImport(ctx context.Context, pass *pass, dirScan []*pkg, pkgName string,
 					wg.Done()
 				}()
 
-				exports, err := loadExports(ctx, pass.env, pkgName, c.pkg)
+				exports, err := loadExports(ctx, env, pkgName, c.pkg)
 				if err != nil {
-					if pass.env.Debug {
-						pass.env.Logf("loading exports in dir %s (seeking package %s): %v", c.pkg.dir, pkgName, err)
+					if env.Debug {
+						log.Printf("loading exports in dir %s (seeking package %s): %v", c.pkg.dir, pkgName, err)
 					}
 					resc <- nil
 					return

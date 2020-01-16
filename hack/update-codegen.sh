@@ -7,8 +7,10 @@ set -o pipefail
 SCRIPT_ROOT=$(dirname ${BASH_SOURCE})/..
 CODEGEN_PKG=${CODEGEN_PKG:-$(cd ${SCRIPT_ROOT}; ls -d -1 ./vendor/k8s.io/code-generator 2>/dev/null || echo ../code-generator)}
 
-${CODEGEN_PKG}/generate-groups.sh "deepcopy,client,informer,lister" \
+bash ${CODEGEN_PKG}/generate-groups.sh "deepcopy,client,informer,lister" \
   github.com/palantir/k8s-spark-scheduler-lib/pkg/client \
   github.com/palantir/k8s-spark-scheduler-lib/pkg/apis \
-  'sparkscheduler:v1beta1 scaler:v1alpha1'
+  'sparkscheduler:v1beta1 scaler:v1alpha1' \
+  --output-base "$(dirname "${BASH_SOURCE[0]}")/../../.." \
+  --go-header-file "${SCRIPT_ROOT}"/hack/boilerplate.go.txt
 
