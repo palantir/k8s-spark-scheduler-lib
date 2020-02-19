@@ -20,15 +20,14 @@ import (
 )
 
 const (
-	// BufferDemandLabel is a label that specifies whether
-	// a Demand is a Buffer.
-	// A Buffer is an amount of
-	// compute resources that is left unused but ready
-	// for quick reservation should there be need.
-	// While demands go once from pending to fulfilled,
-	// Buffer demands can cycle between pending and fulfilled
-	// multiple times.
-	BufferDemandLabel = "com.palantir.compute/buffer"
+// BufferDemandLabel is a label that specifies whether
+// a Demand is a Buffer.
+// A Buffer is an amount of
+// compute resources that is left unused but ready
+// for quick reservation should there be need.
+// While demands go once from pending to fulfilled,
+// Buffer demands can cycle between pending and fulfilled
+// multiple times.
 )
 
 // +genclient
@@ -48,6 +47,16 @@ type Demand struct {
 type DemandSpec struct {
 	Units         []DemandUnit `json:"units"`
 	InstanceGroup string       `json:"instance-group"`
+
+	// IsLongLived changes the lifecycle for a demand from
+	// ephemeral and immutable to long-lived and mutable.
+	// This is useful to set a buffer in an instance-group:
+	// an amount of compute resources that is left unused
+	// but ready for quick reservation should there be need.
+	// While regular demands go once from pending to fulfilled,
+	// long-lived demands can cycle between pending and fulfilled
+	// multiple times.
+	IsLongLived bool `json:"is-long-lived"`
 }
 
 // DemandStatus represents the status a demand object is in
