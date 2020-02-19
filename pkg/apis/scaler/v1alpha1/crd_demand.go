@@ -79,16 +79,16 @@ var (
 				JSONPath:    `.spec.instance-group`,
 				Description: "The instance group for the Demand request",
 			}, {
+				Name:        "long lived",
+				Type:        "boolean",
+				JSONPath:    ".spec.is-long-lived",
+				Description: "The lifecycle description of the Demand request",
+			}, {
 				Name:        "units",
 				Type:        "string",
 				JSONPath:    ".spec.units",
 				Description: "The units of the Demand request",
 				Priority:    1,
-			}, {
-				Name:        "long lived",
-				Type:        "boolean",
-				JSONPath:    ".spec.is-long-lived",
-				Description: "The lifecycle description of the Demand request",
 			}},
 			Validation: &v1beta1.CustomResourceValidation{
 				OpenAPIV3Schema: &v1beta1.JSONSchemaProps{
@@ -113,6 +113,9 @@ var (
 									Type:      "string",
 									MinLength: &oneInt,
 								},
+								"is-long-lived": {
+									Type: "boolean",
+								},
 								"units": {
 									Type: "array",
 									Items: &v1beta1.JSONSchemaPropsOrArray{
@@ -120,10 +123,9 @@ var (
 											Type:     "object",
 											Required: []string{"count", "cpu", "memory"},
 											Properties: map[string]v1beta1.JSONSchemaProps{
-												"count":         {Type: "integer", Minimum: &oneFloat},
-												"cpu":           {Type: "string", MinLength: &oneInt},
-												"memory":        {Type: "string", MinLength: &oneInt},
-												"is-long-lived": {Type: "boolean"},
+												"count":  {Type: "integer", Minimum: &oneFloat},
+												"cpu":    {Type: "string", MinLength: &oneInt},
+												"memory": {Type: "string", MinLength: &oneInt},
 											},
 										},
 									},
