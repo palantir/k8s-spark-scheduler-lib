@@ -19,17 +19,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const (
-// BufferDemandLabel is a label that specifies whether
-// a Demand is a Buffer.
-// A Buffer is an amount of
-// compute resources that is left unused but ready
-// for quick reservation should there be need.
-// While demands go once from pending to fulfilled,
-// Buffer demands can cycle between pending and fulfilled
-// multiple times.
-)
-
 // +genclient
 // +genclient:noStatus
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
