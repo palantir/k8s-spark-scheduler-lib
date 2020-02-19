@@ -54,8 +54,7 @@ var (
 			Name: DemandCustomResourceDefinitionName(),
 		},
 		Spec: v1beta1.CustomResourceDefinitionSpec{
-			Group:   SchemeGroupVersion.Group,
-			Version: SchemeGroupVersion.Version, // this is needed for k8s < 1.11
+			Group: SchemeGroupVersion.Group,
 			Versions: []v1beta1.CustomResourceDefinitionVersion{{
 				Name:    SchemeGroupVersion.Version,
 				Served:  true,
@@ -85,6 +84,11 @@ var (
 				JSONPath:    ".spec.units",
 				Description: "The units of the Demand request",
 				Priority:    1,
+			}, {
+				Name:        "long lived",
+				Type:        "boolean",
+				JSONPath:    ".spec.is-long-lived",
+				Description: "The lifecycle description of the Demand request",
 			}},
 			Validation: &v1beta1.CustomResourceValidation{
 				OpenAPIV3Schema: &v1beta1.JSONSchemaProps{
@@ -116,9 +120,10 @@ var (
 											Type:     "object",
 											Required: []string{"count", "cpu", "memory"},
 											Properties: map[string]v1beta1.JSONSchemaProps{
-												"count":  {Type: "integer", Minimum: &oneFloat},
-												"cpu":    {Type: "string", MinLength: &oneInt},
-												"memory": {Type: "string", MinLength: &oneInt},
+												"count":         {Type: "integer", Minimum: &oneFloat},
+												"cpu":           {Type: "string", MinLength: &oneInt},
+												"memory":        {Type: "string", MinLength: &oneInt},
+												"is-long-lived": {Type: "boolean"},
 											},
 										},
 									},
