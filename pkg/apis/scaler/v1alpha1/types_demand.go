@@ -42,9 +42,6 @@ type DemandSpec struct {
 	// This is useful to set a buffer in an instance-group:
 	// an amount of compute resources that is left unused
 	// but ready for quick reservation should there be need.
-	// While regular demands go once from pending to fulfilled,
-	// long-lived demands can cycle between pending and fulfilled
-	// multiple times.
 	IsLongLived bool `json:"is-long-lived"`
 }
 
