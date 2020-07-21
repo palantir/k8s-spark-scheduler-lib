@@ -15,6 +15,8 @@
 package v1alpha1
 
 import (
+	"time"
+
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -47,7 +49,8 @@ type DemandSpec struct {
 
 // DemandStatus represents the status a demand object is in
 type DemandStatus struct {
-	Phase string `json:"phase"`
+	Phase              string    `json:"phase"`
+	lastTransitionTime time.Time `json:"last-transition-time,omitempty"`
 }
 
 // DemandUnit represents a single unit of demand as a count of CPU and Memory requirements
