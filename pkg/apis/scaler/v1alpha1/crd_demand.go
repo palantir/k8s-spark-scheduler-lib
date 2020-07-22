@@ -103,6 +103,9 @@ var (
 									Type: "string",
 									Enum: getAllowedDemandPhasesEnum(),
 								},
+								"last-transition-time": {
+									Type: "date-time",
+								},
 							},
 						},
 						"spec": {
