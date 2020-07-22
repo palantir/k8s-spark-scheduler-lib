@@ -74,12 +74,6 @@ var (
 				JSONPath:    ".status.phase",
 				Description: "The phase of the Demand request",
 			}, {
-				Name:        "last transition time",
-				Type:        "string",
-				Format:      "date-time",
-				JSONPath:    ".status.last-transition-time",
-				Description: "The timestamp of the last phase transition of the Demand request",
-			}, {
 				Name:        "instance group",
 				Type:        "string",
 				JSONPath:    `.spec.instance-group`,
@@ -110,7 +104,7 @@ var (
 									Enum: getAllowedDemandPhasesEnum(),
 								},
 								"last-transition-time": {
-									Type: "string",
+									Type: "date-time",
 								},
 							},
 						},
