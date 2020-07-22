@@ -79,7 +79,7 @@ var (
 				Format:      "date-time",
 				JSONPath:    ".status.last-transition-time",
 				Description: "The timestamp of the last phase transition of the Demand request",
-			},{
+			}, {
 				Name:        "instance group",
 				Type:        "string",
 				JSONPath:    `.spec.instance-group`,
