@@ -186,6 +186,16 @@ func (r *Resources) AddFromResourceList(resourceList v1.ResourceList) {
 	r.Memory.Add(resourceList[v1.ResourceMemory])
 }
 
+// SetMaxResource modifies the receiver in place to set each resource to the greater value of itself or the corresponding resource in resourceList
+func (r *Resources) SetMaxResource(resourceList v1.ResourceList) {
+	if resourceList[v1.ResourceCPU].Cmp(r.CPU) > 0 {
+		r.CPU = resourceList[v1.ResourceCPU].DeepCopy()
+	}
+	if resourceList[v1.ResourceMemory].Cmp(r.Memory) > 0 {
+		r.Memory = resourceList[v1.ResourceMemory].DeepCopy()
+	}
+}
+
 // GreaterThan returns true if either the CPU or Memory quantities of this object are greater than those
 // of other
 func (r *Resources) GreaterThan(other *Resources) bool {
