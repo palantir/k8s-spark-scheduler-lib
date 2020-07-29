@@ -188,13 +188,13 @@ func (r *Resources) AddFromResourceList(resourceList v1.ResourceList) {
 
 // SetMaxResource modifies the receiver in place to set each resource to the greater value of itself or the corresponding resource in resourceList
 func (r *Resources) SetMaxResource(resourceList v1.ResourceList) {
-	cpuResource := resourceList[v1.ResourceCPU].DeepCopy()
-	memResource := resourceList[v1.ResourceMemory].DeepCopy()
+	cpuResource := resourceList[v1.ResourceCPU]
+	memResource := resourceList[v1.ResourceMemory]
 	if cpuResource.Cmp(r.CPU) > 0 {
-		r.CPU = cpuResource
+		r.CPU = cpuResource.DeepCopy()
 	}
 	if memResource.Cmp(r.Memory) > 0 {
-		r.Memory = memResource
+		r.Memory = memResource.DeepCopy()
 	}
 }
 
