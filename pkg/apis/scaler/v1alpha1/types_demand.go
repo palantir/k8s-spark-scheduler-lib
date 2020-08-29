@@ -48,7 +48,7 @@ type DemandSpec struct {
 // DemandStatus represents the status a demand object is in
 type DemandStatus struct {
 	Phase              string      `json:"phase"`
-	LastTransitionTime metav1.Time `json:"last-transition-time"`
+	LastTransitionTime metav1.Time `json:"last-transition-time,omitempty"`
 }
 
 // DemandUnit represents a single unit of demand as a count of CPU and Memory requirements
