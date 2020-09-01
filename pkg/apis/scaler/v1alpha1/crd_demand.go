@@ -104,8 +104,9 @@ var (
 									Enum: getAllowedDemandPhasesEnum(),
 								},
 								"last-transition-time": {
-									Type:   "string",
-									Format: "date-time",
+									Type:     "string",
+									Format:   "date-time",
+									Nullable: true,
 								},
 							},
 						},
