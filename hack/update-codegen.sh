@@ -11,6 +11,5 @@ bash ${CODEGEN_PKG}/generate-groups.sh "deepcopy,client,informer,lister" \
   github.com/palantir/k8s-spark-scheduler-lib/pkg/client \
   github.com/palantir/k8s-spark-scheduler-lib/pkg/apis \
   'sparkscheduler:v1beta1 scaler:v1alpha1' \
-  --output-base "$(dirname "${BASH_SOURCE[0]}")/../../.." \
   --go-header-file "${SCRIPT_ROOT}"/hack/boilerplate.go.txt
 
