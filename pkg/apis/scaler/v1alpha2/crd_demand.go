@@ -15,7 +15,6 @@
 package v1alpha2
 
 import (
-	"github.com/palantir/k8s-spark-scheduler-lib/pkg/apis/scaler/v1alpha1"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -73,7 +72,7 @@ var (
 		Priority:    1,
 	}}
 	v1alpha1VersionDefinition = v1.CustomResourceDefinitionVersion{
-		Name:    v1alpha1.SchemeGroupVersion.Version,
+		Name:    "v1alpha1",
 		Served:  true,
 		Storage: false,
 		Schema: &v1.CustomResourceValidation{
@@ -213,7 +212,7 @@ var (
 			Conversion: &v1.CustomResourceConversion{
 				Strategy: v1.WebhookConverter,
 				Webhook: &v1.WebhookConversion{
-					ConversionReviewVersions: []string{v1alpha1.SchemeGroupVersion.Version, SchemeGroupVersion.Version},
+					ConversionReviewVersions: []string{"v1alpha1", SchemeGroupVersion.Version},
 					ClientConfig:             nil,
 				},
 			},
@@ -221,7 +220,8 @@ var (
 	}
 )
 
-// DemandCustomResourceDefinition returns the CustomResourceDefinition for the demand resource
+// DemandCustomResourceDefinition returns the CustomResourceDefinition for the demand resource. Webhook provided has to
+// support conversions between v1alpha1 and v1alpha2.
 func DemandCustomResourceDefinition(webhook *v1.WebhookClientConfig) *v1.CustomResourceDefinition {
 	demand := demandDefinition.DeepCopy()
 	demand.Spec.Conversion.Webhook.ClientConfig = webhook
