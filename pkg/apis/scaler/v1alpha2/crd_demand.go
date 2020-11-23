@@ -50,7 +50,29 @@ var (
 	demandGroupResource        = demandGroupVersionResource.GroupResource()
 	oneFloat                   = float64(1)
 	oneInt                     = int64(1)
-	v1alpha1VersionDefinition  = v1.CustomResourceDefinitionVersion{
+	additionalPrinterColumns   = []v1.CustomResourceColumnDefinition{{
+		Name:        "status",
+		Type:        "string",
+		JSONPath:    ".status.phase",
+		Description: "The phase of the Demand request",
+	}, {
+		Name:        "instance group",
+		Type:        "string",
+		JSONPath:    `.spec.instance-group`,
+		Description: "The instance group for the Demand request",
+	}, {
+		Name:        "long lived",
+		Type:        "boolean",
+		JSONPath:    ".spec.is-long-lived",
+		Description: "The lifecycle description of the Demand request",
+	}, {
+		Name:        "units",
+		Type:        "string",
+		JSONPath:    ".spec.units",
+		Description: "The units of the Demand request",
+		Priority:    1,
+	}}
+	v1alpha1VersionDefinition = v1.CustomResourceDefinitionVersion{
 		Name:    v1alpha1.SchemeGroupVersion.Version,
 		Served:  true,
 		Storage: false,
@@ -104,28 +126,7 @@ var (
 				},
 			},
 		},
-		AdditionalPrinterColumns: []v1.CustomResourceColumnDefinition{{
-			Name:        "status",
-			Type:        "string",
-			JSONPath:    ".status.phase",
-			Description: "The phase of the Demand request",
-		}, {
-			Name:        "instance group",
-			Type:        "string",
-			JSONPath:    `.spec.instance-group`,
-			Description: "The instance group for the Demand request",
-		}, {
-			Name:        "long lived",
-			Type:        "boolean",
-			JSONPath:    ".spec.is-long-lived",
-			Description: "The lifecycle description of the Demand request",
-		}, {
-			Name:        "units",
-			Type:        "string",
-			JSONPath:    ".spec.units",
-			Description: "The units of the Demand request",
-			Priority:    1,
-		}},
+		AdditionalPrinterColumns: additionalPrinterColumns,
 	}
 	v1alpha2VersionDefinition = v1.CustomResourceDefinitionVersion{
 		Name:    SchemeGroupVersion.Version,
@@ -171,8 +172,11 @@ var (
 										Properties: map[string]v1.JSONSchemaProps{
 											"resources": {
 												Type: "object",
-												AnyOf: []v1.JSONSchemaProps{
-													v1.JSONSchemaProps{},
+												Properties: map[string]v1.JSONSchemaProps{
+													"cpu": {Type: "string", MinLength: &oneInt},
+													"ephemeral-storage": {Type: "string", MinLength: &oneInt},
+													"memory": {Type: "string", MinLength: &oneInt},
+													"nvidia.com/gpu": {Type: "string", MinLength: &oneInt},
 												},
 											},
 											"count":  {Type: "integer", Minimum: &oneFloat},
@@ -186,28 +190,7 @@ var (
 				},
 			},
 		},
-		AdditionalPrinterColumns: []v1.CustomResourceColumnDefinition{{
-			Name:        "status",
-			Type:        "string",
-			JSONPath:    ".status.phase",
-			Description: "The phase of the Demand request",
-		}, {
-			Name:        "instance group",
-			Type:        "string",
-			JSONPath:    `.spec.instance-group`,
-			Description: "The instance group for the Demand request",
-		}, {
-			Name:        "long lived",
-			Type:        "boolean",
-			JSONPath:    ".spec.is-long-lived",
-			Description: "The lifecycle description of the Demand request",
-		}, {
-			Name:        "units",
-			Type:        "string",
-			JSONPath:    ".spec.units",
-			Description: "The units of the Demand request",
-			Priority:    1,
-		}},
+		AdditionalPrinterColumns: additionalPrinterColumns,
 	}
 	demandDefinition = v1.CustomResourceDefinition{
 		ObjectMeta: metav1.ObjectMeta{
@@ -229,9 +212,9 @@ var (
 			},
 			Conversion: &v1.CustomResourceConversion{
 				Strategy: v1.WebhookConverter,
-				Webhook:  &v1.WebhookConversion{
+				Webhook: &v1.WebhookConversion{
 					ConversionReviewVersions: []string{v1alpha1.SchemeGroupVersion.Version, SchemeGroupVersion.Version},
-					ClientConfig: nil,
+					ClientConfig:             nil,
 				},
 			},
 		},
@@ -240,7 +223,7 @@ var (
 
 // DemandCustomResourceDefinition returns the CustomResourceDefinition for the demand resource
 func DemandCustomResourceDefinition(webhook *v1.WebhookClientConfig) *v1.CustomResourceDefinition {
-	demand :=  demandDefinition.DeepCopy()
+	demand := demandDefinition.DeepCopy()
 	demand.Spec.Conversion.Webhook.ClientConfig = webhook
 	return demand
 }
