@@ -15,7 +15,7 @@
 // +k8s:deepcopy-gen=package,register
 // +groupName=scaler.palantir.com
 
-package v1alpha1
+package v1alpha2
 
 // GroupName used for resources from this package.
 const GroupName = "scaler.palantir.com"

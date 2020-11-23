@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package v1alpha1
+package v1alpha2
 
 import (
 	"github.com/palantir/k8s-spark-scheduler-lib/pkg/apis/scaler/v1alpha1"
@@ -173,10 +173,10 @@ var (
 											"resources": {
 												Type: "object",
 												Properties: map[string]v1.JSONSchemaProps{
-													"cpu": {Type: "string", MinLength: &oneInt},
+													"cpu":               {Type: "string", MinLength: &oneInt},
 													"ephemeral-storage": {Type: "string", MinLength: &oneInt},
-													"memory": {Type: "string", MinLength: &oneInt},
-													"nvidia.com/gpu": {Type: "string", MinLength: &oneInt},
+													"memory":            {Type: "string", MinLength: &oneInt},
+													"nvidia.com/gpu":    {Type: "string", MinLength: &oneInt},
 												},
 											},
 											"count":  {Type: "integer", Minimum: &oneFloat},
