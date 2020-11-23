@@ -6,6 +6,8 @@ import (
 	clientset "github.com/palantir/k8s-spark-scheduler-lib/pkg/client/clientset/versioned"
 	scalerv1alpha1 "github.com/palantir/k8s-spark-scheduler-lib/pkg/client/clientset/versioned/typed/scaler/v1alpha1"
 	fakescalerv1alpha1 "github.com/palantir/k8s-spark-scheduler-lib/pkg/client/clientset/versioned/typed/scaler/v1alpha1/fake"
+	scalerv1alpha2 "github.com/palantir/k8s-spark-scheduler-lib/pkg/client/clientset/versioned/typed/scaler/v1alpha2"
+	fakescalerv1alpha2 "github.com/palantir/k8s-spark-scheduler-lib/pkg/client/clientset/versioned/typed/scaler/v1alpha2/fake"
 	sparkschedulerv1beta1 "github.com/palantir/k8s-spark-scheduler-lib/pkg/client/clientset/versioned/typed/sparkscheduler/v1beta1"
 	fakesparkschedulerv1beta1 "github.com/palantir/k8s-spark-scheduler-lib/pkg/client/clientset/versioned/typed/sparkscheduler/v1beta1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -65,6 +67,11 @@ var _ clientset.Interface = &Clientset{}
 // ScalerV1alpha1 retrieves the ScalerV1alpha1Client
 func (c *Clientset) ScalerV1alpha1() scalerv1alpha1.ScalerV1alpha1Interface {
 	return &fakescalerv1alpha1.FakeScalerV1alpha1{Fake: &c.Fake}
+}
+
+// ScalerV1alpha2 retrieves the ScalerV1alpha2Client
+func (c *Clientset) ScalerV1alpha2() scalerv1alpha2.ScalerV1alpha2Interface {
+	return &fakescalerv1alpha2.FakeScalerV1alpha2{Fake: &c.Fake}
 }
 
 // SparkschedulerV1beta1 retrieves the SparkschedulerV1beta1Client

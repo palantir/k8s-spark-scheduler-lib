@@ -15,7 +15,7 @@
 package v1alpha2
 
 import (
-	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -57,8 +57,8 @@ type DemandStatus struct {
 
 // DemandUnit represents a single unit of demand as a count of resources requirements
 type DemandUnit struct {
-	Resources corev1.ResourceList `json:"resources"`
-	Count     int                 `json:"count"`
+	Resources v1.ResourceList `json:"resources"`
+	Count     int             `json:"count"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
