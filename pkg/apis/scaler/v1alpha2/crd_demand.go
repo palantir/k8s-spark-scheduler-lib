@@ -212,7 +212,7 @@ var (
 			Conversion: &v1.CustomResourceConversion{
 				Strategy: v1.WebhookConverter,
 				Webhook: &v1.WebhookConversion{
-					ConversionReviewVersions: []string{"v1alpha1", SchemeGroupVersion.Version},
+					ConversionReviewVersions: []string{"v1", "v1beta1"},
 					ClientConfig:             nil,
 				},
 			},
