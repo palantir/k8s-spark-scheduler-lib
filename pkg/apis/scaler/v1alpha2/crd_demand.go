@@ -75,6 +75,9 @@ var (
 		Name:    "v1alpha1",
 		Served:  true,
 		Storage: false,
+		Subresources: &v1.CustomResourceSubresources{
+			Status: &v1.CustomResourceSubresourceStatus{},
+		},
 		Schema: &v1.CustomResourceValidation{
 			OpenAPIV3Schema: &v1.JSONSchemaProps{
 				Type:     "object",
@@ -131,6 +134,9 @@ var (
 		Name:    SchemeGroupVersion.Version,
 		Served:  true,
 		Storage: true,
+		Subresources: &v1.CustomResourceSubresources{
+			Status: &v1.CustomResourceSubresourceStatus{},
+		},
 		Schema: &v1.CustomResourceValidation{
 			OpenAPIV3Schema: &v1.JSONSchemaProps{
 				Type:     "object",
