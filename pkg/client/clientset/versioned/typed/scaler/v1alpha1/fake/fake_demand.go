@@ -86,6 +86,18 @@ func (c *FakeDemands) Update(ctx context.Context, demand *v1alpha1.Demand, opts 
 	return obj.(*v1alpha1.Demand), err
 }
 
+// UpdateStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
+func (c *FakeDemands) UpdateStatus(ctx context.Context, demand *v1alpha1.Demand, opts v1.UpdateOptions) (*v1alpha1.Demand, error) {
+	obj, err := c.Fake.
+		Invokes(testing.NewUpdateSubresourceAction(demandsResource, "status", c.ns, demand), &v1alpha1.Demand{})
+
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*v1alpha1.Demand), err
+}
+
 // Delete takes name of the demand and deletes it. Returns an error if one occurs.
 func (c *FakeDemands) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
