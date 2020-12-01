@@ -25,8 +25,11 @@ import (
 func (d *Demand) ConvertTo(dstRaw conversion.Hub) error {
 	dst := dstRaw.(*v1alpha2.Demand)
 
+	// Status
 	dst.Status.LastTransitionTime = d.Status.LastTransitionTime
 	dst.Status.Phase = d.Status.Phase
+
+	// Spec
 	dst.Spec.InstanceGroup = d.Spec.InstanceGroup
 	dst.Spec.IsLongLived = d.Spec.IsLongLived
 
@@ -42,6 +45,9 @@ func (d *Demand) ConvertTo(dstRaw conversion.Hub) error {
 	}
 	dst.Spec.Units = dstUnits
 
+	// ObjectMeta
+	dst.ObjectMeta = d.ObjectMeta
+
 	return nil
 }
 
@@ -49,8 +55,11 @@ func (d *Demand) ConvertTo(dstRaw conversion.Hub) error {
 func (d *Demand) ConvertFrom(srcRaw conversion.Hub) error {
 	src := srcRaw.(*v1alpha2.Demand)
 
+	// Status
 	d.Status.LastTransitionTime = src.Status.LastTransitionTime
 	d.Status.Phase = src.Status.Phase
+
+	// Spec
 	d.Spec.InstanceGroup = src.Spec.InstanceGroup
 	d.Spec.IsLongLived = src.Spec.IsLongLived
 
@@ -74,6 +83,9 @@ func (d *Demand) ConvertFrom(srcRaw conversion.Hub) error {
 		dstUnits = append(dstUnits, demandUnit)
 	}
 	d.Spec.Units = dstUnits
+
+	// ObjectMeta
+	d.ObjectMeta = src.ObjectMeta
 
 	return nil
 }
