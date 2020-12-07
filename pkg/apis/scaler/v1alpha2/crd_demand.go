@@ -35,9 +35,9 @@ const (
 	DemandPhaseCannotFulfill string = "cannot-fulfill"
 
 	// ResourceCPU is the name of CPU resource.
-	ResourceCPU       corev1.ResourceName = corev1.ResourceCPU
+	ResourceCPU corev1.ResourceName = corev1.ResourceCPU
 	// ResourceMemory is the name of Memory resource.
-	ResourceMemory    corev1.ResourceName = corev1.ResourceMemory
+	ResourceMemory corev1.ResourceName = corev1.ResourceMemory
 	// ResourceNvidiaGPU is the name of Nvidia GPU resource.
 	ResourceNvidiaGPU corev1.ResourceName = "nvidia.com/gpu"
 )
@@ -52,7 +52,7 @@ var (
 	}
 
 	// AllSupportedResources is a list of all resources that the demand object supports
-	AllSupportedResources = []corev1.ResourceName {
+	AllSupportedResources = []corev1.ResourceName{
 		ResourceCPU,
 		ResourceMemory,
 		ResourceNvidiaGPU,

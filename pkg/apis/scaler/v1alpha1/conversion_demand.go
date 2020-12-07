@@ -39,8 +39,8 @@ func (d *Demand) ConvertTo(dstRaw conversion.Hub) error {
 	for _, u := range d.Spec.Units {
 		dstUnits = append(dstUnits, v1alpha2.DemandUnit{
 			Resources: v1alpha2.ResourceList{
-				v1alpha2.ResourceCPU:    u.CPU,
-				v1alpha2.ResourceMemory: u.Memory,
+				v1alpha2.ResourceCPU:       u.CPU,
+				v1alpha2.ResourceMemory:    u.Memory,
 				v1alpha2.ResourceNvidiaGPU: u.GPU,
 			},
 			Count: u.Count,

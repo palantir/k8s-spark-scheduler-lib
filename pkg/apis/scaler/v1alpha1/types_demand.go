@@ -58,7 +58,7 @@ type DemandStatus struct {
 type DemandUnit struct {
 	CPU    resource.Quantity `json:"cpu"`
 	Memory resource.Quantity `json:"memory"`
-	GPU    resource.Quantity `json:"gpu",omitempty`
+	GPU    resource.Quantity `json:"gpu,omitempty"`
 	Count  int               `json:"count"`
 }
 

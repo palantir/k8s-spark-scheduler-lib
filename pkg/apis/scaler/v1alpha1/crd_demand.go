@@ -156,6 +156,7 @@ func DemandCustomResourceDefinition() v1.CustomResourceDefinition {
 	return demandDefinition
 }
 
+// DemandCustomResourceDefinitionVersion returns the CustomResourceDefinitionVersion for the demand resource
 func DemandCustomResourceDefinitionVersion() v1.CustomResourceDefinitionVersion {
 	return versionDefinition
 }

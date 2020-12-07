@@ -75,6 +75,7 @@ type DemandList struct {
 	Items []Demand `json:"items"`
 }
 
+// CPU Returns the CPU demand if specified
 func (r *ResourceList) CPU() *resource.Quantity {
 	if val, ok := (*r)[ResourceCPU]; ok {
 		return &val
@@ -82,6 +83,7 @@ func (r *ResourceList) CPU() *resource.Quantity {
 	return &resource.Quantity{Format: resource.DecimalSI}
 }
 
+// Memory Returns the Memory demand if specified
 func (r *ResourceList) Memory() *resource.Quantity {
 	if val, ok := (*r)[ResourceMemory]; ok {
 		return &val
@@ -89,6 +91,7 @@ func (r *ResourceList) Memory() *resource.Quantity {
 	return &resource.Quantity{Format: resource.DecimalSI}
 }
 
+// NvidiaGPU Returns the GPU demand if specified
 func (r *ResourceList) NvidiaGPU() *resource.Quantity {
 	if val, ok := (*r)[ResourceNvidiaGPU]; ok {
 		return &val
