@@ -15,9 +15,9 @@
 package v1alpha2
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 const (
@@ -33,6 +33,13 @@ const (
 	// possible if the demand contains a single unit that is larger than the instance group is configured to use, or if
 	// the instance group has reached its maximum capacity and cannot allocate more
 	DemandPhaseCannotFulfill string = "cannot-fulfill"
+
+	// ResourceCPU is the name of CPU resource.
+	ResourceCPU       corev1.ResourceName = corev1.ResourceCPU
+	// ResourceMemory is the name of Memory resource.
+	ResourceMemory    corev1.ResourceName = corev1.ResourceMemory
+	// ResourceNvidiaGPU is the name of Nvidia GPU resource.
+	ResourceNvidiaGPU corev1.ResourceName = "nvidia.com/gpu"
 )
 
 var (
@@ -44,93 +51,19 @@ var (
 		DemandPhaseCannotFulfill,
 	}
 
+	// AllSupportedResources is a list of all resources that the demand object supports
+	AllSupportedResources = []corev1.ResourceName {
+		ResourceCPU,
+		ResourceMemory,
+		ResourceNvidiaGPU,
+	}
+
 	pluralName                 = "demands"
 	demandGroupVersionResource = SchemeGroupVersion.WithResource(pluralName) // k8s requires this must be plural name
 	demandGroupResource        = demandGroupVersionResource.GroupResource()
 	oneFloat                   = float64(1)
 	oneInt                     = int64(1)
-	additionalPrinterColumns   = []v1.CustomResourceColumnDefinition{{
-		Name:        "status",
-		Type:        "string",
-		JSONPath:    ".status.phase",
-		Description: "The phase of the Demand request",
-	}, {
-		Name:        "instance group",
-		Type:        "string",
-		JSONPath:    `.spec.instance-group`,
-		Description: "The instance group for the Demand request",
-	}, {
-		Name:        "long lived",
-		Type:        "boolean",
-		JSONPath:    ".spec.is-long-lived",
-		Description: "The lifecycle description of the Demand request",
-	}, {
-		Name:        "units",
-		Type:        "string",
-		JSONPath:    ".spec.units",
-		Description: "The units of the Demand request",
-		Priority:    1,
-	}}
-	v1alpha1VersionDefinition = v1.CustomResourceDefinitionVersion{
-		Name:    "v1alpha1",
-		Served:  true,
-		Storage: false,
-		Subresources: &v1.CustomResourceSubresources{
-			Status: &v1.CustomResourceSubresourceStatus{},
-		},
-		Schema: &v1.CustomResourceValidation{
-			OpenAPIV3Schema: &v1.JSONSchemaProps{
-				Type:     "object",
-				Required: []string{"spec", "metadata"},
-				Properties: map[string]v1.JSONSchemaProps{
-					"status": {
-						Type:     "object",
-						Required: []string{"phase"},
-						Properties: map[string]v1.JSONSchemaProps{
-							"phase": {
-								Type: "string",
-								Enum: getAllowedDemandPhasesEnum(),
-							},
-							"last-transition-time": {
-								Type:     "string",
-								Format:   "date-time",
-								Nullable: true,
-							},
-						},
-					},
-					"spec": {
-						Type:     "object",
-						Required: []string{"units", "instance-group"},
-						Properties: map[string]v1.JSONSchemaProps{
-							"instance-group": {
-								Type:      "string",
-								MinLength: &oneInt,
-							},
-							"is-long-lived": {
-								Type: "boolean",
-							},
-							"units": {
-								Type: "array",
-								Items: &v1.JSONSchemaPropsOrArray{
-									Schema: &v1.JSONSchemaProps{
-										Type:     "object",
-										Required: []string{"count", "cpu", "memory"},
-										Properties: map[string]v1.JSONSchemaProps{
-											"count":  {Type: "integer", Minimum: &oneFloat},
-											"cpu":    {Type: "string", MinLength: &oneInt},
-											"memory": {Type: "string", MinLength: &oneInt},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		AdditionalPrinterColumns: additionalPrinterColumns,
-	}
-	v1alpha2VersionDefinition = v1.CustomResourceDefinitionVersion{
+	v1alpha2VersionDefinition  = v1.CustomResourceDefinitionVersion{
 		Name:    SchemeGroupVersion.Version,
 		Served:  true,
 		Storage: true,
@@ -178,10 +111,9 @@ var (
 											"resources": {
 												Type: "object",
 												Properties: map[string]v1.JSONSchemaProps{
-													"cpu":               {Type: "string", MinLength: &oneInt},
-													"ephemeral-storage": {Type: "string", MinLength: &oneInt},
-													"memory":            {Type: "string", MinLength: &oneInt},
-													"nvidia.com/gpu":    {Type: "string", MinLength: &oneInt},
+													"cpu":            {Type: "string", MinLength: &oneInt},
+													"memory":         {Type: "string", MinLength: &oneInt},
+													"nvidia.com/gpu": {Type: "string", MinLength: &oneInt},
 												},
 											},
 											"count":  {Type: "integer", Minimum: &oneFloat},
@@ -195,7 +127,28 @@ var (
 				},
 			},
 		},
-		AdditionalPrinterColumns: additionalPrinterColumns,
+		AdditionalPrinterColumns: []v1.CustomResourceColumnDefinition{{
+			Name:        "status",
+			Type:        "string",
+			JSONPath:    ".status.phase",
+			Description: "The phase of the Demand request",
+		}, {
+			Name:        "instance group",
+			Type:        "string",
+			JSONPath:    `.spec.instance-group`,
+			Description: "The instance group for the Demand request",
+		}, {
+			Name:        "long lived",
+			Type:        "boolean",
+			JSONPath:    ".spec.is-long-lived",
+			Description: "The lifecycle description of the Demand request",
+		}, {
+			Name:        "units",
+			Type:        "string",
+			JSONPath:    ".spec.units",
+			Description: "The units of the Demand request",
+			Priority:    1,
+		}},
 	}
 	demandDefinition = v1.CustomResourceDefinition{
 		ObjectMeta: metav1.ObjectMeta{
@@ -205,7 +158,6 @@ var (
 			Group: SchemeGroupVersion.Group,
 			Versions: []v1.CustomResourceDefinitionVersion{
 				v1alpha2VersionDefinition,
-				v1alpha1VersionDefinition,
 			},
 			Scope: v1.NamespaceScoped,
 			Names: v1.CustomResourceDefinitionNames{
@@ -226,17 +178,14 @@ var (
 	}
 )
 
-// DemandCustomResourceDefinition returns the CustomResourceDefinition for the demand resource. Webhook provided has to
-// support conversions between v1alpha1 and v1alpha2.
-func DemandCustomResourceDefinition(webhook *v1.WebhookClientConfig) *v1.CustomResourceDefinition {
+// DemandCustomResourceDefinition returns the CustomResourceDefinition for the demand resource.
+// Webhook provided has to support conversions between v1alpha2 and all the versions in the
+// supportedVersions array.
+func DemandCustomResourceDefinition(webhook *v1.WebhookClientConfig, supportedVersions ...v1.CustomResourceDefinitionVersion) *v1.CustomResourceDefinition {
 	demand := demandDefinition.DeepCopy()
 	demand.Spec.Conversion.Webhook.ClientConfig = webhook
+	demand.Spec.Versions = append(demand.Spec.Versions, supportedVersions...)
 	return demand
-}
-
-// DemandGroupVersionResource returns the schema.GroupVersionResource for the demand resource
-func DemandGroupVersionResource() schema.GroupVersionResource {
-	return demandGroupVersionResource
 }
 
 // DemandCustomResourceDefinitionName returns the demand resource name as a string

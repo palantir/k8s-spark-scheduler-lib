@@ -17,13 +17,15 @@ package v1alpha1
 import (
 	"github.com/palantir/k8s-spark-scheduler-lib/pkg/apis/scaler/v1alpha2"
 	werror "github.com/palantir/witchcraft-go-error"
-	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
 // ConvertTo converts from v1alpha1 to the storage version v1alpha2
 func (d *Demand) ConvertTo(dstRaw conversion.Hub) error {
 	dst := dstRaw.(*v1alpha2.Demand)
+
+	// ObjectMeta
+	dst.ObjectMeta = d.ObjectMeta
 
 	// Status
 	dst.Status.LastTransitionTime = d.Status.LastTransitionTime
@@ -36,17 +38,15 @@ func (d *Demand) ConvertTo(dstRaw conversion.Hub) error {
 	dstUnits := make([]v1alpha2.DemandUnit, 0, len(d.Spec.Units))
 	for _, u := range d.Spec.Units {
 		dstUnits = append(dstUnits, v1alpha2.DemandUnit{
-			Resources: v1.ResourceList{
-				v1.ResourceCPU:    u.CPU,
-				v1.ResourceMemory: u.Memory,
+			Resources: v1alpha2.ResourceList{
+				v1alpha2.ResourceCPU:    u.CPU,
+				v1alpha2.ResourceMemory: u.Memory,
+				v1alpha2.ResourceNvidiaGPU: u.GPU,
 			},
 			Count: u.Count,
 		})
 	}
 	dst.Spec.Units = dstUnits
-
-	// ObjectMeta
-	dst.ObjectMeta = d.ObjectMeta
 
 	return nil
 }
@@ -54,6 +54,9 @@ func (d *Demand) ConvertTo(dstRaw conversion.Hub) error {
 // ConvertFrom converts from storage version v1alpha2 to v1alpha1
 func (d *Demand) ConvertFrom(srcRaw conversion.Hub) error {
 	src := srcRaw.(*v1alpha2.Demand)
+
+	// ObjectMeta
+	d.ObjectMeta = src.ObjectMeta
 
 	// Status
 	d.Status.LastTransitionTime = src.Status.LastTransitionTime
@@ -70,10 +73,12 @@ func (d *Demand) ConvertFrom(srcRaw conversion.Hub) error {
 		}
 		for name, quantity := range u.Resources {
 			switch name {
-			case v1.ResourceCPU:
+			case v1alpha2.ResourceCPU:
 				demandUnit.CPU = quantity
-			case v1.ResourceMemory:
+			case v1alpha2.ResourceMemory:
 				demandUnit.Memory = quantity
+			case v1alpha2.ResourceNvidiaGPU:
+				demandUnit.GPU = quantity
 			default:
 				return werror.Error("unsupported resource found during demand conversion from storage version to v1alpha1",
 					werror.SafeParam("resourceName", name),
@@ -83,9 +88,6 @@ func (d *Demand) ConvertFrom(srcRaw conversion.Hub) error {
 		dstUnits = append(dstUnits, demandUnit)
 	}
 	d.Spec.Units = dstUnits
-
-	// ObjectMeta
-	d.ObjectMeta = src.ObjectMeta
 
 	return nil
 }

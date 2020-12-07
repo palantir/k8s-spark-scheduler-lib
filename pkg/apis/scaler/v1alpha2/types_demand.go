@@ -15,7 +15,8 @@
 package v1alpha2
 
 import (
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -55,10 +56,13 @@ type DemandStatus struct {
 	LastTransitionTime metav1.Time `json:"last-transition-time,omitempty"`
 }
 
+// ResourceList is a set of (resource name, quantity) pairs.
+type ResourceList map[corev1.ResourceName]resource.Quantity
+
 // DemandUnit represents a single unit of demand as a count of resources requirements
 type DemandUnit struct {
-	Resources v1.ResourceList `json:"resources"`
-	Count     int             `json:"count"`
+	Resources ResourceList `json:"resources"`
+	Count     int          `json:"count"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -69,4 +73,25 @@ type DemandList struct {
 	metav1.ListMeta `json:"metadata"`
 
 	Items []Demand `json:"items"`
+}
+
+func (r *ResourceList) CPU() *resource.Quantity {
+	if val, ok := (*r)[ResourceCPU]; ok {
+		return &val
+	}
+	return &resource.Quantity{Format: resource.DecimalSI}
+}
+
+func (r *ResourceList) Memory() *resource.Quantity {
+	if val, ok := (*r)[ResourceMemory]; ok {
+		return &val
+	}
+	return &resource.Quantity{Format: resource.DecimalSI}
+}
+
+func (r *ResourceList) NvidiaGPU() *resource.Quantity {
+	if val, ok := (*r)[ResourceNvidiaGPU]; ok {
+		return &val
+	}
+	return &resource.Quantity{Format: resource.DecimalSI}
 }
