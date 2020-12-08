@@ -23,17 +23,17 @@ import (
 
 const (
 	// DemandPhaseEmpty is the state of a demand object when it is first created
-	DemandPhaseEmpty string = v1alpha2.DemandPhaseEmpty
+	DemandPhaseEmpty string = string(v1alpha2.DemandPhaseEmpty)
 	// DemandPhasePending is the state a demand object is in when Scaler has acknowledged it but has not yet taken
 	// action to fulfill the demand
-	DemandPhasePending string = v1alpha2.DemandPhasePending
+	DemandPhasePending string = string(v1alpha2.DemandPhasePending)
 	// DemandPhaseFulfilled is the state a demand object is in when Scaler has taken action and the action has completed
 	// to fulfill the demand. At this point, it is expected that there is capacity to meet the demand the object represents
-	DemandPhaseFulfilled string = v1alpha2.DemandPhaseFulfilled
+	DemandPhaseFulfilled string = string(v1alpha2.DemandPhaseFulfilled)
 	// DemandPhaseCannotFulfill is the state a demand object is in when Scaler is unable to satisfy the demand. This is
 	// possible if the demand contains a single unit that is larger than the instance group is configured to use, or if
 	// the instance group has reached its maximum capacity and cannot allocate more
-	DemandPhaseCannotFulfill string = v1alpha2.DemandPhaseCannotFulfill
+	DemandPhaseCannotFulfill string = string(v1alpha2.DemandPhaseCannotFulfill)
 )
 
 var (
