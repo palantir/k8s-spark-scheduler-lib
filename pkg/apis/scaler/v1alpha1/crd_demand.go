@@ -45,7 +45,7 @@ var (
 	demandGroupResource        = demandGroupVersionResource.GroupResource()
 	oneFloat                   = float64(1)
 	oneInt                     = int64(1)
-	v1alpha1VersionDefinition          = v1.CustomResourceDefinitionVersion{
+	v1alpha1VersionDefinition  = v1.CustomResourceDefinitionVersion{
 		Name:    SchemeGroupVersion.Version,
 		Served:  true,
 		Storage: true,
