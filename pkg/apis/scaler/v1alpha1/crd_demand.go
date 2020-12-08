@@ -15,6 +15,7 @@
 package v1alpha1
 
 import (
+	"github.com/palantir/k8s-spark-scheduler-lib/pkg/apis/scaler/v1alpha2"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -22,34 +23,29 @@ import (
 
 const (
 	// DemandPhaseEmpty is the state of a demand object when it is first created
-	DemandPhaseEmpty string = ""
+	DemandPhaseEmpty string = v1alpha2.DemandPhaseEmpty
 	// DemandPhasePending is the state a demand object is in when Scaler has acknowledged it but has not yet taken
 	// action to fulfill the demand
-	DemandPhasePending string = "pending"
+	DemandPhasePending string = v1alpha2.DemandPhasePending
 	// DemandPhaseFulfilled is the state a demand object is in when Scaler has taken action and the action has completed
 	// to fulfill the demand. At this point, it is expected that there is capacity to meet the demand the object represents
-	DemandPhaseFulfilled string = "fulfilled"
+	DemandPhaseFulfilled string = v1alpha2.DemandPhaseFulfilled
 	// DemandPhaseCannotFulfill is the state a demand object is in when Scaler is unable to satisfy the demand. This is
 	// possible if the demand contains a single unit that is larger than the instance group is configured to use, or if
 	// the instance group has reached its maximum capacity and cannot allocate more
-	DemandPhaseCannotFulfill string = "cannot-fulfill"
+	DemandPhaseCannotFulfill string = v1alpha2.DemandPhaseCannotFulfill
 )
 
 var (
 	// AllDemandPhases is a list of all phases that a demand object could be in
-	AllDemandPhases = []string{
-		DemandPhaseEmpty,
-		DemandPhasePending,
-		DemandPhaseFulfilled,
-		DemandPhaseCannotFulfill,
-	}
+	AllDemandPhases = v1alpha2.AllDemandPhases
 
 	pluralName                 = "demands"
 	demandGroupVersionResource = SchemeGroupVersion.WithResource(pluralName) // k8s requires this must be plural name
 	demandGroupResource        = demandGroupVersionResource.GroupResource()
 	oneFloat                   = float64(1)
 	oneInt                     = int64(1)
-	versionDefinition          = v1.CustomResourceDefinitionVersion{
+	v1alpha1VersionDefinition          = v1.CustomResourceDefinitionVersion{
 		Name:    SchemeGroupVersion.Version,
 		Served:  true,
 		Storage: true,
@@ -137,7 +133,7 @@ var (
 		Spec: v1.CustomResourceDefinitionSpec{
 			Group: SchemeGroupVersion.Group,
 			Versions: []v1.CustomResourceDefinitionVersion{
-				versionDefinition,
+				v1alpha1VersionDefinition,
 			},
 			Scope: v1.NamespaceScoped,
 			Names: v1.CustomResourceDefinitionNames{
@@ -158,7 +154,7 @@ func DemandCustomResourceDefinition() v1.CustomResourceDefinition {
 
 // DemandCustomResourceDefinitionVersion returns the CustomResourceDefinitionVersion for the demand resource
 func DemandCustomResourceDefinitionVersion() v1.CustomResourceDefinitionVersion {
-	return versionDefinition
+	return v1alpha1VersionDefinition
 }
 
 // DemandGroupVersionResource returns the schema.GroupVersionResource for the demand resource

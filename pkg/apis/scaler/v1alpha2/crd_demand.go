@@ -33,13 +33,6 @@ const (
 	// possible if the demand contains a single unit that is larger than the instance group is configured to use, or if
 	// the instance group has reached its maximum capacity and cannot allocate more
 	DemandPhaseCannotFulfill string = "cannot-fulfill"
-
-	// ResourceCPU is the name of CPU resource.
-	ResourceCPU corev1.ResourceName = corev1.ResourceCPU
-	// ResourceMemory is the name of Memory resource.
-	ResourceMemory corev1.ResourceName = corev1.ResourceMemory
-	// ResourceNvidiaGPU is the name of Nvidia GPU resource.
-	ResourceNvidiaGPU corev1.ResourceName = "nvidia.com/gpu"
 )
 
 var (

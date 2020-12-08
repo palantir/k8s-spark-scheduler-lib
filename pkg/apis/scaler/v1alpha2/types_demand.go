@@ -20,6 +20,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	// ResourceCPU is the name of CPU resource.
+	ResourceCPU corev1.ResourceName = corev1.ResourceCPU
+	// ResourceMemory is the name of Memory resource.
+	ResourceMemory corev1.ResourceName = corev1.ResourceMemory
+	// ResourceNvidiaGPU is the name of Nvidia GPU resource.
+	ResourceNvidiaGPU corev1.ResourceName = "nvidia.com/gpu"
+)
+
 // +genclient
 // +genclient:noStatus
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
