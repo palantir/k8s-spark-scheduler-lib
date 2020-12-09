@@ -20,7 +20,23 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// DemandPhase type declares that the value is a Demands phase
+type DemandPhase string
+
 const (
+	// DemandPhaseEmpty is the state of a demand object when it is first created
+	DemandPhaseEmpty DemandPhase = ""
+	// DemandPhasePending is the state a demand object is in when Scaler has acknowledged it but has not yet taken
+	// action to fulfill the demand
+	DemandPhasePending DemandPhase = "pending"
+	// DemandPhaseFulfilled is the state a demand object is in when Scaler has taken action and the action has completed
+	// to fulfill the demand. At this point, it is expected that there is capacity to meet the demand the object represents
+	DemandPhaseFulfilled DemandPhase = "fulfilled"
+	// DemandPhaseCannotFulfill is the state a demand object is in when Scaler is unable to satisfy the demand. This is
+	// possible if the demand contains a single unit that is larger than the instance group is configured to use, or if
+	// the instance group has reached its maximum capacity and cannot allocate more
+	DemandPhaseCannotFulfill DemandPhase = "cannot-fulfill"
+
 	// ResourceCPU is the name of CPU resource.
 	ResourceCPU corev1.ResourceName = corev1.ResourceCPU
 	// ResourceMemory is the name of Memory resource.
