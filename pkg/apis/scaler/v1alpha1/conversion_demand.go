@@ -15,6 +15,8 @@
 package v1alpha1
 
 import (
+	"fmt"
+
 	"github.com/palantir/k8s-spark-scheduler-lib/pkg/apis/scaler/v1alpha2"
 	werror "github.com/palantir/witchcraft-go-error"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
@@ -22,7 +24,12 @@ import (
 
 // ConvertTo converts from v1alpha1 to the storage version v1alpha2
 func (d *Demand) ConvertTo(dstRaw conversion.Hub) error {
-	dst := dstRaw.(*v1alpha2.Demand)
+	dst, ok := dstRaw.(*v1alpha2.Demand)
+	if !ok {
+		return werror.Error("dst type not as expected", 
+			werror.SafeParam("expectedType", fmt.Sprintf("%T", v1alpha2.Demand{})),
+			werror.SafeParam("actualType", fmt.Sprintf("%T", dstRaw)))
+	}
 
 	dst.ObjectMeta = d.ObjectMeta
 
@@ -50,7 +57,12 @@ func (d *Demand) ConvertTo(dstRaw conversion.Hub) error {
 
 // ConvertFrom converts from storage version v1alpha2 to v1alpha1
 func (d *Demand) ConvertFrom(srcRaw conversion.Hub) error {
-	src := srcRaw.(*v1alpha2.Demand)
+	src, ok := srcRaw.(*v1alpha2.Demand)
+	if !ok {
+		return werror.Error("src type not as expected", 
+			werror.SafeParam("expectedType", fmt.Sprintf("%T", v1alpha2.Demand{})),
+			werror.SafeParam("actualType", fmt.Sprintf("%T", srcRaw)))
+	}
 
 	d.ObjectMeta = src.ObjectMeta
 

@@ -15,27 +15,11 @@
 package v1alpha2
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
-	// AllDemandPhases is a list of all phases that a demand object could be in
-	AllDemandPhases = []DemandPhase{
-		DemandPhaseEmpty,
-		DemandPhasePending,
-		DemandPhaseFulfilled,
-		DemandPhaseCannotFulfill,
-	}
-
-	// AllSupportedResources is a list of all resources that the demand object supports
-	AllSupportedResources = []corev1.ResourceName{
-		ResourceCPU,
-		ResourceMemory,
-		ResourceNvidiaGPU,
-	}
-
 	pluralName                 = "demands"
 	demandGroupVersionResource = SchemeGroupVersion.WithResource(pluralName) // k8s requires this must be plural name
 	demandGroupResource        = demandGroupVersionResource.GroupResource()
@@ -89,9 +73,9 @@ var (
 											"resources": {
 												Type: "object",
 												Properties: map[string]v1.JSONSchemaProps{
-													"cpu":            {Type: "string", MinLength: &oneInt},
-													"memory":         {Type: "string", MinLength: &oneInt},
-													"nvidia.com/gpu": {Type: "string", MinLength: &oneInt},
+													string(ResourceCPU):       {Type: "string", MinLength: &oneInt},
+													string(ResourceMemory):    {Type: "string", MinLength: &oneInt},
+													string(ResourceNvidiaGPU): {Type: "string", MinLength: &oneInt},
 												},
 											},
 											"count": {Type: "integer", Minimum: &oneFloat},

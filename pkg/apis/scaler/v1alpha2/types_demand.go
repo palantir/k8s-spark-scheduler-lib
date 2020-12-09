@@ -45,6 +45,23 @@ const (
 	ResourceNvidiaGPU corev1.ResourceName = "nvidia.com/gpu"
 )
 
+var (
+	// AllDemandPhases is a list of all phases that a demand object could be in
+	AllDemandPhases = []DemandPhase{
+		DemandPhaseEmpty,
+		DemandPhasePending,
+		DemandPhaseFulfilled,
+		DemandPhaseCannotFulfill,
+	}
+
+	// AllSupportedResources is a list of all resources that the demand object supports
+	AllSupportedResources = []corev1.ResourceName{
+		ResourceCPU,
+		ResourceMemory,
+		ResourceNvidiaGPU,
+	}
+)
+
 // +genclient
 // +genclient:noStatus
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
