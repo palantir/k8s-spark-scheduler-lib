@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	v1alpha1 "github.com/palantir/k8s-spark-scheduler-lib/pkg/apis/scaler/v1alpha1"
+	v1alpha2 "github.com/palantir/k8s-spark-scheduler-lib/pkg/apis/scaler/v1alpha2"
 	v1beta1 "github.com/palantir/k8s-spark-scheduler-lib/pkg/apis/sparkscheduler/v1beta1"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
@@ -40,6 +41,10 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 	// Group=scaler.palantir.com, Version=v1alpha1
 	case v1alpha1.SchemeGroupVersion.WithResource("demands"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Scaler().V1alpha1().Demands().Informer()}, nil
+
+		// Group=scaler.palantir.com, Version=v1alpha2
+	case v1alpha2.SchemeGroupVersion.WithResource("demands"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Scaler().V1alpha2().Demands().Informer()}, nil
 
 		// Group=sparkscheduler.palantir.com, Version=v1beta1
 	case v1beta1.SchemeGroupVersion.WithResource("resourcereservations"):

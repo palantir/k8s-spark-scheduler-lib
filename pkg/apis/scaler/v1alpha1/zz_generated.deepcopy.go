@@ -114,6 +114,7 @@ func (in *DemandUnit) DeepCopyInto(out *DemandUnit) {
 	*out = *in
 	out.CPU = in.CPU.DeepCopy()
 	out.Memory = in.Memory.DeepCopy()
+	out.GPU = in.GPU.DeepCopy()
 	return
 }
 

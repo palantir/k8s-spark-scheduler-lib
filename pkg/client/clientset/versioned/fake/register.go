@@ -4,6 +4,7 @@ package fake
 
 import (
 	scalerv1alpha1 "github.com/palantir/k8s-spark-scheduler-lib/pkg/apis/scaler/v1alpha1"
+	scalerv1alpha2 "github.com/palantir/k8s-spark-scheduler-lib/pkg/apis/scaler/v1alpha2"
 	sparkschedulerv1beta1 "github.com/palantir/k8s-spark-scheduler-lib/pkg/apis/sparkscheduler/v1beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
@@ -17,6 +18,7 @@ var codecs = serializer.NewCodecFactory(scheme)
 var parameterCodec = runtime.NewParameterCodec(scheme)
 var localSchemeBuilder = runtime.SchemeBuilder{
 	scalerv1alpha1.AddToScheme,
+	scalerv1alpha2.AddToScheme,
 	sparkschedulerv1beta1.AddToScheme,
 }
 
