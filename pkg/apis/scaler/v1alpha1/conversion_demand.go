@@ -26,7 +26,7 @@ import (
 func (d *Demand) ConvertTo(dstRaw conversion.Hub) error {
 	dst, ok := dstRaw.(*v1alpha2.Demand)
 	if !ok {
-		return werror.Error("dst type not as expected", 
+		return werror.Error("dst type not as expected",
 			werror.SafeParam("expectedType", fmt.Sprintf("%T", v1alpha2.Demand{})),
 			werror.SafeParam("actualType", fmt.Sprintf("%T", dstRaw)))
 	}
@@ -59,7 +59,7 @@ func (d *Demand) ConvertTo(dstRaw conversion.Hub) error {
 func (d *Demand) ConvertFrom(srcRaw conversion.Hub) error {
 	src, ok := srcRaw.(*v1alpha2.Demand)
 	if !ok {
-		return werror.Error("src type not as expected", 
+		return werror.Error("src type not as expected",
 			werror.SafeParam("expectedType", fmt.Sprintf("%T", v1alpha2.Demand{})),
 			werror.SafeParam("actualType", fmt.Sprintf("%T", srcRaw)))
 	}
