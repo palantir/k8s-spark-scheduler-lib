@@ -34,7 +34,7 @@ func (d *Demand) ConvertTo(dstRaw conversion.Hub) error {
 	dst.ObjectMeta = d.ObjectMeta
 
 	dst.Status.LastTransitionTime = d.Status.LastTransitionTime
-	dst.Status.Phase = d.Status.Phase
+	dst.Status.Phase = v1alpha2.DemandPhase(d.Status.Phase)
 
 	dst.Spec.InstanceGroup = d.Spec.InstanceGroup
 	dst.Spec.IsLongLived = d.Spec.IsLongLived
@@ -67,7 +67,7 @@ func (d *Demand) ConvertFrom(srcRaw conversion.Hub) error {
 	d.ObjectMeta = src.ObjectMeta
 
 	d.Status.LastTransitionTime = src.Status.LastTransitionTime
-	d.Status.Phase = src.Status.Phase
+	d.Status.Phase = string(src.Status.Phase)
 
 	d.Spec.InstanceGroup = src.Spec.InstanceGroup
 	d.Spec.IsLongLived = src.Spec.IsLongLived
