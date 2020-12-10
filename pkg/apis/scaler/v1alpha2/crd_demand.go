@@ -17,6 +17,7 @@ package v1alpha2
 import (
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 var (
@@ -152,6 +153,11 @@ func DemandCustomResourceDefinition(webhook *v1.WebhookClientConfig, supportedVe
 // DemandCustomResourceDefinitionName returns the demand resource name as a string
 func DemandCustomResourceDefinitionName() string {
 	return (&demandGroupResource).String()
+}
+
+// DemandGroupVersionResource returns the schema.GroupVersionResource for the demand resource
+func DemandGroupVersionResource() schema.GroupVersionResource {
+	return demandGroupVersionResource
 }
 
 func getAllowedDemandPhasesEnum() []v1.JSON {

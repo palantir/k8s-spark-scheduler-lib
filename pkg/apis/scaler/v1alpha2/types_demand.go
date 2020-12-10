@@ -91,7 +91,7 @@ type DemandSpec struct {
 // DemandStatus represents the status a demand object is in
 type DemandStatus struct {
 	// Phase denotes the demand phase.
-	Phase string `json:"phase"`
+	Phase DemandPhase `json:"phase"`
 	// LastTransitionTime denotes the last transition time of the demand phase.
 	// If left empty, defaults to the creation time of the demand.
 	// +optional
