@@ -146,6 +146,9 @@ var (
 func DemandCustomResourceDefinition(webhook *v1.WebhookClientConfig, supportedVersions ...v1.CustomResourceDefinitionVersion) *v1.CustomResourceDefinition {
 	demand := demandDefinition.DeepCopy()
 	demand.Spec.Conversion.Webhook.ClientConfig = webhook
+	for i := range supportedVersions {
+		supportedVersions[i].Storage = false
+	}
 	demand.Spec.Versions = append(demand.Spec.Versions, supportedVersions...)
 	return demand
 }
