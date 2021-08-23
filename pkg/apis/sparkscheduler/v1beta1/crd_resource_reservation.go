@@ -31,6 +31,54 @@ var v1beta1VersionDefinition = v1.CustomResourceDefinitionVersion{
 		JSONPath:    ".status.driverPod",
 		Description: "Pod name of the driver",
 	}},
+	Schema: &v1.CustomResourceValidation{
+		OpenAPIV3Schema: &v1.JSONSchemaProps{
+			Type:     "object",
+			Required: []string{"spec", "metadata"},
+			Properties: map[string]v1.JSONSchemaProps{
+				"status": {
+					Type:     "object",
+					Required: []string{"pods"},
+					Properties: map[string]v1.JSONSchemaProps{
+						"pods": {
+							Type: "object",
+							AdditionalProperties: &v1.JSONSchemaPropsOrBool{
+								Schema: &v1.JSONSchemaProps{
+									Type: "string",
+								},
+							},
+						},
+					},
+				},
+				"spec": {
+					Type:     "object",
+					Required: []string{"reservations"},
+					Properties: map[string]v1.JSONSchemaProps{
+						"reservations": {
+							Type: "object",
+							AdditionalProperties: &v1.JSONSchemaPropsOrBool{
+								Schema: &v1.JSONSchemaProps{
+									Type:     "object",
+									Required: []string{"node", "cpu", "memory"},
+									Properties: map[string]v1.JSONSchemaProps{
+										"node": {
+											Type: "string",
+										},
+										"cpu": {
+											Type: "string",
+										},
+										"memory": {
+											Type: "string",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	},
 }
 
 var resourceReservationDefinition = &v1.CustomResourceDefinition{

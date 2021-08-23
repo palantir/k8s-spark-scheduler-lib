@@ -1,0 +1,106 @@
+// Copyright (c) 2019 Palantir Technologies. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package v1beta1
+
+import (
+	"encoding/json"
+	"fmt"
+
+	"github.com/palantir/k8s-spark-scheduler-lib/pkg/apis/sparkscheduler/v1beta2"
+	werror "github.com/palantir/witchcraft-go-error"
+	"sigs.k8s.io/controller-runtime/pkg/conversion"
+)
+
+// ConvertTo converts from v1beta1 to the storage version v1beta2
+// We first try to take values from the ReservationsAnnotation.
+// If the ReservationsAnnotation does not exist then we take the values directly from the struct.
+func (rr *ResourceReservation) ConvertTo(dstRaw conversion.Hub) error {
+	dst, ok := dstRaw.(*v1beta2.ResourceReservation)
+	if !ok {
+		return werror.Error("dst type not as expected",
+			werror.SafeParam("expectedType", fmt.Sprintf("%T", v1beta2.ResourceReservation{})),
+			werror.SafeParam("actualType", fmt.Sprintf("%T", dstRaw)))
+	}
+
+	dst.ObjectMeta = rr.ObjectMeta
+
+	dst.Status.Pods = make(map[string]string, len(rr.Status.Pods))
+	for key, value := range rr.Status.Pods {
+		dst.Status.Pods[key] = value
+	}
+
+	// Attempt to take the values from the ReservationsAnnotation
+	if annotationResourceReservationSpecJSON, ok := rr.ObjectMeta.Annotations[ReservationsAnnotation]; ok {
+		var annotationResourceReservationSpec v1beta2.ResourceReservationSpec
+		err := json.Unmarshal([]byte(annotationResourceReservationSpecJSON), &annotationResourceReservationSpec)
+		if err != nil {
+			return err
+		}
+		dst.Spec = annotationResourceReservationSpec
+	} else {
+		// Take the values from the v1 struct
+		dst.Spec.Reservations = make(map[string]v1beta2.Reservation, len(rr.Spec.Reservations))
+		for key, value := range rr.Spec.Reservations {
+			dst.Spec.Reservations[key] = v1beta2.Reservation{
+				Node: value.Node,
+				Resources: v1beta2.ResourceList{
+					string(v1beta2.ResourceCPU):    &value.CPU,
+					string(v1beta2.ResourceMemory): &value.Memory,
+				},
+			}
+		}
+	}
+
+	// Remove the reservation annotation metadata as we don't need it in a v2 object.
+	delete(dst.ObjectMeta.Annotations, ReservationsAnnotation)
+
+	return nil
+}
+
+// ConvertFrom converts from storage version v1beta2 to v1beta1
+func (rr *ResourceReservation) ConvertFrom(srcRaw conversion.Hub) error {
+	src, ok := srcRaw.(*v1beta2.ResourceReservation)
+	if !ok {
+		return werror.Error("src type not as expected",
+			werror.SafeParam("expectedType", fmt.Sprintf("%T", v1beta2.ResourceReservation{})),
+			werror.SafeParam("actualType", fmt.Sprintf("%T", srcRaw)))
+	}
+
+	rr.ObjectMeta = src.ObjectMeta
+	// Marshal the
+	reservationSpecBytes, err := json.Marshal(src.Spec)
+	if err != nil {
+		return err
+	}
+	if rr.ObjectMeta.Annotations == nil {
+		rr.ObjectMeta.Annotations = make(map[string]string, 1)
+	}
+	rr.ObjectMeta.Annotations[ReservationsAnnotation] = string(reservationSpecBytes)
+
+	rr.Status.Pods = make(map[string]string, len(src.Status.Pods))
+	for key, value := range src.Status.Pods {
+		rr.Status.Pods[key] = value
+	}
+
+	rr.Spec.Reservations = make(map[string]Reservation, len(src.Spec.Reservations))
+	for key, value := range src.Spec.Reservations {
+		rr.Spec.Reservations[key] = Reservation{
+			Node:   value.Node,
+			CPU:    *value.Resources.CPU(),
+			Memory: *value.Resources.Memory(),
+		}
+	}
+	return nil
+}
