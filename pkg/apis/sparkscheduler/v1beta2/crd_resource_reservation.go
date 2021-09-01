@@ -36,10 +36,21 @@ var resourceReservationDefinition = &apiextensionsv1beta1.CustomResourceDefiniti
 			JSONPath:    ".status.driverPod",
 			Description: "Pod name of the driver",
 		}},
+		Conversion: &apiextensionsv1beta1.CustomResourceConversion{
+			Strategy:                 apiextensionsv1beta1.WebhookConverter,
+			ConversionReviewVersions: []string{"v1", "v1beta1"},
+			WebhookClientConfig:      nil,
+		},
 	},
 }
 
 // ResourceReservationCustomResourceDefinition returns the CRD definition for resource reservations
-func ResourceReservationCustomResourceDefinition() *apiextensionsv1beta1.CustomResourceDefinition {
-	return resourceReservationDefinition.DeepCopy()
+func ResourceReservationCustomResourceDefinition(webhook *apiextensionsv1beta1.WebhookClientConfig, supportedVersions ...apiextensionsv1beta1.CustomResourceDefinitionVersion) *apiextensionsv1beta1.CustomResourceDefinition {
+	resourceReservation := resourceReservationDefinition.DeepCopy()
+	resourceReservation.Spec.Conversion.WebhookClientConfig = webhook
+	for i := range supportedVersions {
+		supportedVersions[i].Storage = false
+	}
+	resourceReservation.Spec.Versions = append(resourceReservation.Spec.Versions, supportedVersions...)
+	return resourceReservation
 }
