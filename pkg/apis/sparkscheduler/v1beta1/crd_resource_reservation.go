@@ -15,32 +15,35 @@
 package v1beta1
 
 import (
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const resourceReservationCRDName = ResourceReservationPlural + "." + GroupName
 
-var v1beta1VersionDefinition = apiextensionsv1beta1.CustomResourceDefinitionVersion{
-	Name:    SchemeGroupVersion.Version,
+var v1beta1VersionDefinition = v1.CustomResourceDefinitionVersion{
+	Name:    "v1beta1",
 	Served:  true,
 	Storage: true,
-	Subresources: &apiextensionsv1beta1.CustomResourceSubresources{
-		Status: &apiextensionsv1beta1.CustomResourceSubresourceStatus{},
-	},
-	Schema: &apiextensionsv1beta1.CustomResourceValidation{
-		OpenAPIV3Schema: &apiextensionsv1beta1.JSONSchemaProps{
+	AdditionalPrinterColumns: []v1.CustomResourceColumnDefinition{{
+		Name:        "driver",
+		Type:        "string",
+		JSONPath:    ".status.driverPod",
+		Description: "Pod name of the driver",
+	}},
+	Schema: &v1.CustomResourceValidation{
+		OpenAPIV3Schema: &v1.JSONSchemaProps{
 			Type:     "object",
 			Required: []string{"spec", "metadata"},
-			Properties: map[string]apiextensionsv1beta1.JSONSchemaProps{
+			Properties: map[string]v1.JSONSchemaProps{
 				"status": {
 					Type:     "object",
 					Required: []string{"pods"},
-					Properties: map[string]apiextensionsv1beta1.JSONSchemaProps{
+					Properties: map[string]v1.JSONSchemaProps{
 						"pods": {
 							Type: "object",
-							AdditionalProperties: &apiextensionsv1beta1.JSONSchemaPropsOrBool{
-								Schema: &apiextensionsv1beta1.JSONSchemaProps{
+							AdditionalProperties: &v1.JSONSchemaPropsOrBool{
+								Schema: &v1.JSONSchemaProps{
 									Type: "string",
 								},
 							},
@@ -50,13 +53,13 @@ var v1beta1VersionDefinition = apiextensionsv1beta1.CustomResourceDefinitionVers
 				"spec": {
 					Type:     "object",
 					Required: []string{"reservations"},
-					Properties: map[string]apiextensionsv1beta1.JSONSchemaProps{
+					Properties: map[string]v1.JSONSchemaProps{
 						"reservations": {
 							Type: "object",
-							AdditionalProperties: &apiextensionsv1beta1.JSONSchemaPropsOrBool{
-								Schema: &apiextensionsv1beta1.JSONSchemaProps{
+							AdditionalProperties: &v1.JSONSchemaPropsOrBool{
+								Schema: &v1.JSONSchemaProps{
 									Required: []string{"node", "cpu", "memory"},
-									Properties: map[string]apiextensionsv1beta1.JSONSchemaProps{
+									Properties: map[string]v1.JSONSchemaProps{
 										"node": {
 											Type: "string",
 										},
@@ -80,34 +83,26 @@ var v1beta1VersionDefinition = apiextensionsv1beta1.CustomResourceDefinitionVers
 	},
 }
 
-var resourceReservationDefinition = &apiextensionsv1beta1.CustomResourceDefinition{
+var resourceReservationDefinition = &v1.CustomResourceDefinition{
 	ObjectMeta: metav1.ObjectMeta{
 		Name: resourceReservationCRDName,
 	},
-	Spec: apiextensionsv1beta1.CustomResourceDefinitionSpec{
-		Group:   GroupName,
-		Version: "v1beta1",
-		Versions: []apiextensionsv1beta1.CustomResourceDefinitionVersion{
+	Spec: v1.CustomResourceDefinitionSpec{
+		Group: GroupName,
+		Versions: []v1.CustomResourceDefinitionVersion{
 			v1beta1VersionDefinition,
 		},
-		Scope: apiextensionsv1beta1.NamespaceScoped,
-		Names: apiextensionsv1beta1.CustomResourceDefinitionNames{
+		Scope: v1.NamespaceScoped,
+		Names: v1.CustomResourceDefinitionNames{
 			Plural:     ResourceReservationPlural,
 			Kind:       "ResourceReservation",
 			ShortNames: []string{"rr"},
 			Categories: []string{"all"},
 		},
-		PreserveUnknownFields: new(bool),
-		AdditionalPrinterColumns: []apiextensionsv1beta1.CustomResourceColumnDefinition{{
-			Name:        "driver",
-			Type:        "string",
-			JSONPath:    ".status.driverPod",
-			Description: "Pod name of the driver",
-		}},
 	},
 }
 
 // ResourceReservationCustomResourceDefinition returns the CRD definition for resource reservations
-func ResourceReservationCustomResourceDefinition() *apiextensionsv1beta1.CustomResourceDefinition {
+func ResourceReservationCustomResourceDefinition() *v1.CustomResourceDefinition {
 	return resourceReservationDefinition.DeepCopy()
 }
