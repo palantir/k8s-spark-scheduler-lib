@@ -13,6 +13,9 @@ var v1beta2VersionDefinition = apiextensionsv1beta1.CustomResourceDefinitionVers
 	Name:    SchemeGroupVersion.Version,
 	Served:  true,
 	Storage: true,
+	Subresources: &apiextensionsv1beta1.CustomResourceSubresources{
+		Status: &apiextensionsv1beta1.CustomResourceSubresourceStatus{},
+	},
 	Schema: &apiextensionsv1beta1.CustomResourceValidation{
 		OpenAPIV3Schema: &apiextensionsv1beta1.JSONSchemaProps{
 			Type:     "object",
@@ -24,8 +27,10 @@ var v1beta2VersionDefinition = apiextensionsv1beta1.CustomResourceDefinitionVers
 					Properties: map[string]apiextensionsv1beta1.JSONSchemaProps{
 						"pods": {
 							Type: "object",
-							PatternProperties: map[string]apiextensionsv1beta1.JSONSchemaProps{
-								".{1,}": {Type: "string"},
+							AdditionalProperties: &apiextensionsv1beta1.JSONSchemaPropsOrBool{
+								Schema: &apiextensionsv1beta1.JSONSchemaProps{
+									Type: "string",
+								},
 							},
 						},
 					},
@@ -36,8 +41,8 @@ var v1beta2VersionDefinition = apiextensionsv1beta1.CustomResourceDefinitionVers
 					Properties: map[string]apiextensionsv1beta1.JSONSchemaProps{
 						"reservations": {
 							Type: "object",
-							PatternProperties: map[string]apiextensionsv1beta1.JSONSchemaProps{
-								".{1,}": {
+							AdditionalProperties: &apiextensionsv1beta1.JSONSchemaPropsOrBool{
+								Schema: &apiextensionsv1beta1.JSONSchemaProps{
 									Required: []string{"node", "cpu", "memory", "nvidia.com/gpu"},
 									Properties: map[string]apiextensionsv1beta1.JSONSchemaProps{
 										"node": {
