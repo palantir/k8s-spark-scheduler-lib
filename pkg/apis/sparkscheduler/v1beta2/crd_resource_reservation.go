@@ -9,6 +9,60 @@ import (
 
 const resourceReservationCRDName = ResourceReservationPlural + "." + GroupName
 
+var v1beta2VersionDefinition = apiextensionsv1beta1.CustomResourceDefinitionVersion{
+	Name:    SchemeGroupVersion.Version,
+	Served:  true,
+	Storage: true,
+	Schema: &apiextensionsv1beta1.CustomResourceValidation{
+		OpenAPIV3Schema: &apiextensionsv1beta1.JSONSchemaProps{
+			Type:     "object",
+			Required: []string{"spec", "metadata"},
+			Properties: map[string]apiextensionsv1beta1.JSONSchemaProps{
+				"status": {
+					Type:     "object",
+					Required: []string{"pods"},
+					Properties: map[string]apiextensionsv1beta1.JSONSchemaProps{
+						"pods": {
+							Type: "object",
+							PatternProperties: map[string]apiextensionsv1beta1.JSONSchemaProps{
+								".{1,}": {Type: "string"},
+							},
+						},
+					},
+				},
+				"spec": {
+					Type:     "object",
+					Required: []string{"reservations"},
+					Properties: map[string]apiextensionsv1beta1.JSONSchemaProps{
+						"reservations": {
+							Type: "object",
+							PatternProperties: map[string]apiextensionsv1beta1.JSONSchemaProps{
+								".{1,}": {
+									Required: []string{"node", "cpu", "memory", "nvidia.com/gpu"},
+									Properties: map[string]apiextensionsv1beta1.JSONSchemaProps{
+										"node": {
+											Type: "string",
+										},
+										"cpu": {
+											Type: "string",
+										},
+										"memory": {
+											Type: "string",
+										},
+										"nvidia.com/gpu": {
+											Type: "string",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	},
+}
+
 var resourceReservationDefinition = &apiextensionsv1beta1.CustomResourceDefinition{
 	ObjectMeta: metav1.ObjectMeta{
 		Name: resourceReservationCRDName,
@@ -17,11 +71,7 @@ var resourceReservationDefinition = &apiextensionsv1beta1.CustomResourceDefiniti
 		Group:   GroupName,
 		Version: "v1beta2",
 		Versions: []apiextensionsv1beta1.CustomResourceDefinitionVersion{
-			{
-				Name:    "v1beta2",
-				Served:  true,
-				Storage: true,
-			},
+			v1beta2VersionDefinition,
 		},
 		Scope: apiextensionsv1beta1.NamespaceScoped,
 		Names: apiextensionsv1beta1.CustomResourceDefinitionNames{
@@ -36,6 +86,7 @@ var resourceReservationDefinition = &apiextensionsv1beta1.CustomResourceDefiniti
 			JSONPath:    ".status.driverPod",
 			Description: "Pod name of the driver",
 		}},
+		PreserveUnknownFields: new(bool),
 		Conversion: &apiextensionsv1beta1.CustomResourceConversion{
 			Strategy:                 apiextensionsv1beta1.WebhookConverter,
 			ConversionReviewVersions: []string{"v1", "v1beta1"},
@@ -53,4 +104,9 @@ func ResourceReservationCustomResourceDefinition(webhook *apiextensionsv1beta1.W
 	}
 	resourceReservation.Spec.Versions = append(resourceReservation.Spec.Versions, supportedVersions...)
 	return resourceReservation
+}
+
+// ResourceReservationCustomResourceDefinition returns the CRD definition for resource reservations
+func ResourceReservationCustomResourceDefinitionBase() *apiextensionsv1beta1.CustomResourceDefinition {
+	return resourceReservationDefinition.DeepCopy()
 }

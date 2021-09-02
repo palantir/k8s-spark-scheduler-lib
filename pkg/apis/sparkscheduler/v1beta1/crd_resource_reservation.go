@@ -21,6 +21,60 @@ import (
 
 const resourceReservationCRDName = ResourceReservationPlural + "." + GroupName
 
+var v1beta1VersionDefinition = apiextensionsv1beta1.CustomResourceDefinitionVersion{
+	Name:    SchemeGroupVersion.Version,
+	Served:  true,
+	Storage: true,
+	Schema: &apiextensionsv1beta1.CustomResourceValidation{
+		OpenAPIV3Schema: &apiextensionsv1beta1.JSONSchemaProps{
+			Type:     "object",
+			Required: []string{"spec", "metadata"},
+			Properties: map[string]apiextensionsv1beta1.JSONSchemaProps{
+				"status": {
+					Type:     "object",
+					Required: []string{"pods"},
+					Properties: map[string]apiextensionsv1beta1.JSONSchemaProps{
+						"pods": {
+							Type: "object",
+							PatternProperties: map[string]apiextensionsv1beta1.JSONSchemaProps{
+								".{1,}": {Type: "string"},
+							},
+						},
+					},
+				},
+				"spec": {
+					Type:     "object",
+					Required: []string{"reservations"},
+					Properties: map[string]apiextensionsv1beta1.JSONSchemaProps{
+						"reservations": {
+							Type: "object",
+							PatternProperties: map[string]apiextensionsv1beta1.JSONSchemaProps{
+								".{1,}": {
+									Required: []string{"node", "cpu", "memory"},
+									Properties: map[string]apiextensionsv1beta1.JSONSchemaProps{
+										"node": {
+											Type: "string",
+										},
+										"cpu": {
+											Type: "string",
+										},
+										"memory": {
+											Type: "string",
+										},
+										"nvidia.com/gpu": {
+											Type: "string",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	},
+}
+
 var resourceReservationDefinition = &apiextensionsv1beta1.CustomResourceDefinition{
 	ObjectMeta: metav1.ObjectMeta{
 		Name: resourceReservationCRDName,
@@ -29,11 +83,7 @@ var resourceReservationDefinition = &apiextensionsv1beta1.CustomResourceDefiniti
 		Group:   GroupName,
 		Version: "v1beta1",
 		Versions: []apiextensionsv1beta1.CustomResourceDefinitionVersion{
-			{
-				Name:    "v1beta1",
-				Served:  true,
-				Storage: true,
-			},
+			v1beta1VersionDefinition,
 		},
 		Scope: apiextensionsv1beta1.NamespaceScoped,
 		Names: apiextensionsv1beta1.CustomResourceDefinitionNames{
@@ -42,6 +92,7 @@ var resourceReservationDefinition = &apiextensionsv1beta1.CustomResourceDefiniti
 			ShortNames: []string{"rr"},
 			Categories: []string{"all"},
 		},
+		PreserveUnknownFields: new(bool),
 		AdditionalPrinterColumns: []apiextensionsv1beta1.CustomResourceColumnDefinition{{
 			Name:        "driver",
 			Type:        "string",
