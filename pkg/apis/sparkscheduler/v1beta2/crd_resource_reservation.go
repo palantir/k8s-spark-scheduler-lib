@@ -120,8 +120,3 @@ func ResourceReservationCustomResourceDefinition(webhook *v1.WebhookClientConfig
 	resourceReservation.Spec.Versions = append(resourceReservation.Spec.Versions, supportedVersions...)
 	return resourceReservation
 }
-
-// ResourceReservationCustomResourceDefinition returns the CRD definition for resource reservations
-func ResourceReservationCustomResourceDefinitionBase() *v1.CustomResourceDefinition {
-	return resourceReservationDefinition.DeepCopy()
-}
