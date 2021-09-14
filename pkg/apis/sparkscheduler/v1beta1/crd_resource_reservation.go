@@ -15,17 +15,17 @@
 package v1beta1
 
 import (
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const resourceReservationCRDName = ResourceReservationPlural + "." + GroupName
 
-var v1beta1VersionDefinition = apiextensionsv1.CustomResourceDefinitionVersion{
+var v1beta1VersionDefinition = v1.CustomResourceDefinitionVersion{
 	Name:    "v1beta1",
 	Served:  true,
 	Storage: true,
-	AdditionalPrinterColumns: []apiextensionsv1.CustomResourceColumnDefinition{{
+	AdditionalPrinterColumns: []v1.CustomResourceColumnDefinition{{
 		Name:        "driver",
 		Type:        "string",
 		JSONPath:    ".status.driverPod",
@@ -33,17 +33,17 @@ var v1beta1VersionDefinition = apiextensionsv1.CustomResourceDefinitionVersion{
 	}},
 }
 
-var resourceReservationDefinition = &apiextensionsv1.CustomResourceDefinition{
+var resourceReservationDefinition = &v1.CustomResourceDefinition{
 	ObjectMeta: metav1.ObjectMeta{
 		Name: resourceReservationCRDName,
 	},
-	Spec: apiextensionsv1.CustomResourceDefinitionSpec{
+	Spec: v1.CustomResourceDefinitionSpec{
 		Group: GroupName,
-		Versions: []apiextensionsv1.CustomResourceDefinitionVersion{
+		Versions: []v1.CustomResourceDefinitionVersion{
 			v1beta1VersionDefinition,
 		},
-		Scope: apiextensionsv1.NamespaceScoped,
-		Names: apiextensionsv1.CustomResourceDefinitionNames{
+		Scope: v1.NamespaceScoped,
+		Names: v1.CustomResourceDefinitionNames{
 			Plural:     ResourceReservationPlural,
 			Kind:       "ResourceReservation",
 			ShortNames: []string{"rr"},
@@ -53,11 +53,11 @@ var resourceReservationDefinition = &apiextensionsv1.CustomResourceDefinition{
 }
 
 // ResourceReservationCustomResourceDefinition returns the CRD definition for resource reservations
-func ResourceReservationCustomResourceDefinition() *apiextensionsv1.CustomResourceDefinition {
+func ResourceReservationCustomResourceDefinition() *v1.CustomResourceDefinition {
 	return resourceReservationDefinition.DeepCopy()
 }
 
 // ResourceReservationCustomResourceDefinitionVersion returns the CustomResourceDefinitionVersion for the demand resource
-func ResourceReservationCustomResourceDefinitionVersion() apiextensionsv1.CustomResourceDefinitionVersion {
+func ResourceReservationCustomResourceDefinitionVersion() v1.CustomResourceDefinitionVersion {
 	return v1beta1VersionDefinition
 }
