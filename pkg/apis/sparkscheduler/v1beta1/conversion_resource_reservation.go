@@ -49,7 +49,7 @@ func (rr *ResourceReservation) ConvertTo(dstRaw conversion.Hub) error {
 	return nil
 }
 
-// ConvertFrom converts from storage version v1alpha2 to v1alpha1
+// ConvertFrom converts from storage version v1beta2 to v1beta1
 func (rr *ResourceReservation) ConvertFrom(srcRaw conversion.Hub) error {
 	src, ok := srcRaw.(*v1beta2.ResourceReservation)
 	if !ok {
