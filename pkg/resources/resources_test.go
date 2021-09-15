@@ -21,11 +21,11 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-func createResources(cpu, memory, nvidia_gpus int64) *Resources {
+func createResources(cpu, memory, nvidiaGpus int64) *Resources {
 	return &Resources{
 		CPU:       *resource.NewQuantity(cpu, resource.DecimalSI),
 		Memory:    *resource.NewQuantity(memory, resource.BinarySI),
-		NvidiaGPU: *resource.NewQuantity(nvidia_gpus, resource.DecimalSI),
+		NvidiaGPU: *resource.NewQuantity(nvidiaGpus, resource.DecimalSI),
 	}
 }
 
