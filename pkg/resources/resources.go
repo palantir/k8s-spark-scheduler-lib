@@ -15,9 +15,9 @@
 package resources
 
 import (
-	"github.com/palantir/k8s-spark-scheduler-lib/pkg/apis/sparkscheduler/v1beta1"
 	"time"
 
+	"github.com/palantir/k8s-spark-scheduler-lib/pkg/apis/sparkscheduler/v1beta1"
 	"github.com/palantir/k8s-spark-scheduler-lib/pkg/apis/sparkscheduler/v1beta2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -44,7 +44,7 @@ func UsageForNodes(resourceReservations []*v1beta1.ResourceReservation) NodeGrou
 	return res
 }
 
-// UsageForNodes tallies resource usages per node from the given list of resource reservations
+// UsageForNodesV1Beta2 tallies resource usages per node from the given list of resource reservations
 func UsageForNodesV1Beta2(resourceReservations []*v1beta2.ResourceReservation) NodeGroupResources {
 	res := NodeGroupResources(map[string]*Resources{})
 	for _, rr := range resourceReservations {

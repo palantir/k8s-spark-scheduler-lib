@@ -36,7 +36,7 @@ func RRSafeParam(resourceReservation *v1beta1.ResourceReservation) map[string]in
 	}
 }
 
-// RRSafeParam gets the safe params for a list of resource reservations
+// RRSafeParamV1Beta2 gets the safe params for a list of resource reservations
 func RRSafeParamV1Beta2(resourceReservation *v1beta2.ResourceReservation) map[string]interface{} {
 	names := make([]string, 0, len(resourceReservation.Spec.Reservations))
 	pods := make([]string, 0, len(resourceReservation.Spec.Reservations))
