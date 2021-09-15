@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/palantir/witchcraft-go-error v1.4.3
+	github.com/stretchr/testify v1.7.0
 	google.golang.org/appengine v1.6.1 // indirect
 	k8s.io/api v0.18.8
 	k8s.io/apiextensions-apiserver v0.18.8
