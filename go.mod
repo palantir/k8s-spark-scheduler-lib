@@ -1,6 +1,6 @@
 module github.com/palantir/k8s-spark-scheduler-lib
 
-go 1.13
+go 1.16
 
 require (
 	github.com/palantir/witchcraft-go-error v1.4.3
