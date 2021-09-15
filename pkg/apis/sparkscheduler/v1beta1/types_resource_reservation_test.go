@@ -63,14 +63,14 @@ var (
 )
 
 func cacheStringValuesOfReservation(r *Reservation) {
+	// Calling String() caches the string value of the quantity, unmarshalled reservations already have this so we need
+	// to call it for all reservations to get deep equality to be consistent
 	_ = r.CPU.String()
 	_ = r.Memory.String()
 	_ = r.NvidiaGPU.String()
 }
 
 func compareReservations(t *testing.T, r1 *Reservation, r2 *Reservation) {
-	// Calling string caches the string value of the quantity, unmarshalled reservations already have this so we need
-	// to call it for all reservations to get deep equality to be consistent
 	cacheStringValuesOfReservation(r1)
 	cacheStringValuesOfReservation(r2)
 	require.Equal(t, r1, r2)
