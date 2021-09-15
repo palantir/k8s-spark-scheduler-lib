@@ -21,17 +21,18 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-func createResources(cpu, memory int64) *Resources {
+func createResources(cpu, memory, nvidia_gpus int64) *Resources {
 	return &Resources{
-		CPU:    *resource.NewQuantity(cpu, resource.DecimalSI),
-		Memory: *resource.NewQuantity(memory, resource.BinarySI),
+		CPU:       *resource.NewQuantity(cpu, resource.DecimalSI),
+		Memory:    *resource.NewQuantity(memory, resource.BinarySI),
+		NvidiaGPU: *resource.NewQuantity(nvidia_gpus, resource.DecimalSI),
 	}
 }
 
 func TestAdd(t *testing.T) {
-	first := NodeGroupResources(map[string]*Resources{"1": createResources(1, 2), "2": createResources(3, 10)})
-	second := NodeGroupResources(map[string]*Resources{"1": createResources(2, 4), "3": createResources(1, 5)})
-	result := NodeGroupResources(map[string]*Resources{"1": createResources(3, 6), "2": createResources(3, 10), "3": createResources(1, 5)})
+	first := NodeGroupResources(map[string]*Resources{"1": createResources(1, 2, 3), "2": createResources(3, 10, 4)})
+	second := NodeGroupResources(map[string]*Resources{"1": createResources(2, 4, 1), "3": createResources(1, 5, 6)})
+	result := NodeGroupResources(map[string]*Resources{"1": createResources(3, 6, 4), "2": createResources(3, 10, 4), "3": createResources(1, 5, 6)})
 	first.Add(second)
 	if !reflect.DeepEqual(first, result) {
 		t.Fatalf("sum not equal, expected: %+v, got: %+v", result, first)
@@ -39,9 +40,9 @@ func TestAdd(t *testing.T) {
 }
 
 func TestSub(t *testing.T) {
-	first := NodeGroupResources(map[string]*Resources{"1": createResources(1, 2), "2": createResources(3, 10)})
-	second := NodeGroupResources(map[string]*Resources{"1": createResources(2, 4), "3": createResources(1, 5)})
-	result := NodeGroupResources(map[string]*Resources{"1": createResources(-1, -2), "2": createResources(3, 10), "3": createResources(-1, -5)})
+	first := NodeGroupResources(map[string]*Resources{"1": createResources(1, 2, 3), "2": createResources(3, 10, 4)})
+	second := NodeGroupResources(map[string]*Resources{"1": createResources(2, 4, 1), "3": createResources(1, 5, 6)})
+	result := NodeGroupResources(map[string]*Resources{"1": createResources(-1, -2, 2), "2": createResources(3, 10, 4), "3": createResources(-1, -5, -6)})
 	first.Sub(second)
 	if !reflect.DeepEqual(first, result) {
 		t.Fatalf("difference not equal, expected: %+v, got: %+v", result, first)
