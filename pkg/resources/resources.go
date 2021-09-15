@@ -24,7 +24,7 @@ import (
 
 const (
 	zoneLabelPlaceholder = "default"
-	// ResourceNvidiaGPU is the name of the nvidia gpu resource
+	// ResourceNvidiaGPU is the name of the Nvidia GPU resource
 	ResourceNvidiaGPU corev1.ResourceName = "nvidia.com/gpu"
 )
 
