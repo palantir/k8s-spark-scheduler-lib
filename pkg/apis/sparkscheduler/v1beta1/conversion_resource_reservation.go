@@ -16,6 +16,7 @@ package v1beta1
 
 import (
 	"fmt"
+
 	"github.com/palantir/k8s-spark-scheduler-lib/pkg/apis/sparkscheduler/v1beta2"
 	werror "github.com/palantir/witchcraft-go-error"
 	"k8s.io/apimachinery/pkg/api/resource"
