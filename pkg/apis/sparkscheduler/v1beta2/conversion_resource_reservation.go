@@ -14,5 +14,5 @@
 
 package v1beta2
 
-// Hub defines v1alpha2 as the storage version
+// Hub defines v1beta2 as the storage version
 func (*ResourceReservation) Hub() {}
