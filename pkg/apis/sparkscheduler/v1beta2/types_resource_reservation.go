@@ -85,7 +85,7 @@ func (r *ResourceList) Memory() *resource.Quantity {
 	if val, ok := (*r)[string(ResourceMemory)]; ok {
 		return val
 	}
-	return resource.NewQuantity(0, resource.DecimalSI)
+	return resource.NewQuantity(0, resource.BinarySI)
 }
 
 // NvidiaGPU returns the amount of Nvidia GPUs for the reservation, if Nvidia GPUs have not been specified, it returns 0.

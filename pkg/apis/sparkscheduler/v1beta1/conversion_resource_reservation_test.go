@@ -29,7 +29,7 @@ var v1Beta1ReservationWithGPU = ResourceReservation{
 		"driver": {
 			Node:   "test_node",
 			CPU:    *resource.NewQuantity(1, resource.DecimalSI),
-			Memory: *resource.NewQuantity(2, resource.DecimalSI),
+			Memory: *resource.NewQuantity(2, resource.BinarySI),
 		},
 	}},
 	Status: ResourceReservationStatus{Pods: map[string]string{
@@ -56,7 +56,7 @@ var v1Beta1ReservationWithoutGPU = ResourceReservation{
 		"driver": {
 			Node:   "test_node",
 			CPU:    *resource.NewQuantity(1, resource.DecimalSI),
-			Memory: *resource.NewQuantity(2, resource.DecimalSI),
+			Memory: *resource.NewQuantity(2, resource.BinarySI),
 		},
 	}},
 	Status: ResourceReservationStatus{Pods: map[string]string{
@@ -71,7 +71,7 @@ var v1Beta2ReservationWithGPU = v1beta2.ResourceReservation{
 				Node: "test_node",
 				Resources: v1beta2.ResourceList{
 					string(v1beta2.ResourceCPU):       resource.NewQuantity(1, resource.DecimalSI),
-					string(v1beta2.ResourceMemory):    resource.NewQuantity(2, resource.DecimalSI),
+					string(v1beta2.ResourceMemory):    resource.NewQuantity(2, resource.BinarySI),
 					string(v1beta2.ResourceNvidiaGPU): resource.NewQuantity(3, resource.DecimalSI),
 				},
 			},
@@ -88,7 +88,7 @@ var v1Beta2ReservationWithGPUAndPreConversionChanges = v1beta2.ResourceReservati
 				Node: "test_node",
 				Resources: v1beta2.ResourceList{
 					string(v1beta2.ResourceCPU):       resource.NewQuantity(10, resource.DecimalSI),
-					string(v1beta2.ResourceMemory):    resource.NewQuantity(2, resource.DecimalSI),
+					string(v1beta2.ResourceMemory):    resource.NewQuantity(2, resource.BinarySI),
 					string(v1beta2.ResourceNvidiaGPU): resource.NewQuantity(3, resource.DecimalSI),
 				},
 			},
@@ -105,7 +105,7 @@ var v1Beta2ReservationWithoutGPU = v1beta2.ResourceReservation{
 				Node: "test_node",
 				Resources: v1beta2.ResourceList{
 					string(v1beta2.ResourceCPU):    resource.NewQuantity(1, resource.DecimalSI),
-					string(v1beta2.ResourceMemory): resource.NewQuantity(2, resource.DecimalSI),
+					string(v1beta2.ResourceMemory): resource.NewQuantity(2, resource.BinarySI),
 				},
 			},
 		}},
