@@ -34,37 +34,52 @@ func (rr *ResourceReservation) ConvertTo(dstRaw conversion.Hub) error {
 			werror.SafeParam("actualType", fmt.Sprintf("%T", dstRaw)))
 	}
 
-	dst.ObjectMeta = rr.ObjectMeta
+	dst.ObjectMeta = *rr.ObjectMeta.DeepCopy()
+
+	// Remove the reservation annotation metadata as we don't need it in a v2 object.
+	delete(dst.ObjectMeta.Annotations, ReservationsAnnotation)
 
 	dst.Status.Pods = make(map[string]string, len(rr.Status.Pods))
 	for key, value := range rr.Status.Pods {
 		dst.Status.Pods[key] = value
 	}
 
-	// Attempt to take the values from the ReservationsAnnotation
+	// Take the common values from the v1 struct
+	dst.Spec.Reservations = make(map[string]v1beta2.Reservation, len(rr.Spec.Reservations))
+	for key, value := range rr.Spec.Reservations {
+		dst.Spec.Reservations[key] = v1beta2.Reservation{
+			Node: value.Node,
+			Resources: v1beta2.ResourceList{
+				string(v1beta2.ResourceCPU):    &value.CPU,
+				string(v1beta2.ResourceMemory): &value.Memory,
+			},
+		}
+	}
+
+	// Attempt to take any other values from the ReservationsAnnotation
 	if annotationResourceReservationSpecJSON, ok := rr.ObjectMeta.Annotations[ReservationsAnnotation]; ok {
 		var annotationResourceReservationSpec v1beta2.ResourceReservationSpec
 		err := json.Unmarshal([]byte(annotationResourceReservationSpecJSON), &annotationResourceReservationSpec)
 		if err != nil {
 			return err
 		}
-		dst.Spec = annotationResourceReservationSpec
-	} else {
-		// Take the values from the v1 struct
-		dst.Spec.Reservations = make(map[string]v1beta2.Reservation, len(rr.Spec.Reservations))
-		for key, value := range rr.Spec.Reservations {
-			dst.Spec.Reservations[key] = v1beta2.Reservation{
-				Node: value.Node,
-				Resources: v1beta2.ResourceList{
-					string(v1beta2.ResourceCPU):    &value.CPU,
-					string(v1beta2.ResourceMemory): &value.Memory,
-				},
+		for key, annotationReservation := range annotationResourceReservationSpec.Reservations {
+			// If the annotationReservation did not exist in the annotationReservation objects of the v1 struct,
+			// make the annotationReservation with an empty resource list
+			if val, ok := dst.Spec.Reservations[key]; !ok {
+				dst.Spec.Reservations[key] = v1beta2.Reservation{
+					Node:      val.Node,
+					Resources: v1beta2.ResourceList{},
+				}
+			}
+			// Add all resources we could not get from the v1 struct to the resource list, e.g. NvidiaGPU
+			for resourceName, quantity := range annotationReservation.Resources {
+				if _, ok := dst.Spec.Reservations[key].Resources[resourceName]; !ok {
+					dst.Spec.Reservations[key].Resources[resourceName] = quantity
+				}
 			}
 		}
 	}
-
-	// Remove the reservation annotation metadata as we don't need it in a v2 object.
-	delete(dst.ObjectMeta.Annotations, ReservationsAnnotation)
 
 	return nil
 }
@@ -78,8 +93,9 @@ func (rr *ResourceReservation) ConvertFrom(srcRaw conversion.Hub) error {
 			werror.SafeParam("actualType", fmt.Sprintf("%T", srcRaw)))
 	}
 
-	rr.ObjectMeta = src.ObjectMeta
-	// Marshal the
+	rr.ObjectMeta = *src.ObjectMeta.DeepCopy()
+
+	// Marshal the reservation spec and store it in the annotations, so we don't lose information in round trip conversions
 	reservationSpecBytes, err := json.Marshal(src.Spec)
 	if err != nil {
 		return err

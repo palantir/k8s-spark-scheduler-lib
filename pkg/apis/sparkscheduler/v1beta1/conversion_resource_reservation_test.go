@@ -81,6 +81,23 @@ var v1Beta2ReservationWithGPU = v1beta2.ResourceReservation{
 	}},
 }
 
+var v1Beta2ReservationWithGPUAndPreConversionChanges = v1beta2.ResourceReservation{
+	Spec: v1beta2.ResourceReservationSpec{
+		Reservations: map[string]v1beta2.Reservation{
+			"driver": {
+				Node: "test_node",
+				Resources: v1beta2.ResourceList{
+					string(v1beta2.ResourceCPU):       resource.NewQuantity(10, resource.DecimalSI),
+					string(v1beta2.ResourceMemory):    resource.NewQuantity(2, resource.DecimalSI),
+					string(v1beta2.ResourceNvidiaGPU): resource.NewQuantity(3, resource.DecimalSI),
+				},
+			},
+		}},
+	Status: v1beta2.ResourceReservationStatus{Pods: map[string]string{
+		"driver": "test_driver",
+	}},
+}
+
 var v1Beta2ReservationWithoutGPU = v1beta2.ResourceReservation{
 	Spec: v1beta2.ResourceReservationSpec{
 		Reservations: map[string]v1beta2.Reservation{
@@ -115,7 +132,7 @@ func TestConversionFromV1Beta1ToV1Beta2WithGPUs(t *testing.T) {
 	var v1beta2ResConverted v1beta2.ResourceReservation
 	err := v1Beta1ReservationWithGPU.ConvertTo(&v1beta2ResConverted)
 	if err != nil {
-		t.Fatalf("Conversion from v1Beta2 to v1Beta1 failed with err: %s", err)
+		t.Fatalf("Conversion from v1Beta1 to v1Beta2 failed with err: %s", err)
 	}
 	compareV1Beta2ResourceReservationSpecs(t, &v1Beta2ReservationWithGPU.Spec, &v1beta2ResConverted.Spec)
 	require.Equal(t, v1Beta2ReservationWithGPU.Status, v1beta2ResConverted.Status)
@@ -128,11 +145,39 @@ func TestConversionFromV1Beta1ToV1Beta2WithoutGPUs(t *testing.T) {
 	var v1beta2ResConverted v1beta2.ResourceReservation
 	err := v1Beta1ReservationWithoutGPU.ConvertTo(&v1beta2ResConverted)
 	if err != nil {
-		t.Fatalf("Conversion from v1Beta2 to v1Beta1 failed with err: %s", err)
+		t.Fatalf("Conversion from v1Beta1 to v1Beta2 failed with err: %s", err)
 	}
 	compareV1Beta2ResourceReservationSpecs(t, &v1Beta2ReservationWithoutGPU.Spec, &v1beta2ResConverted.Spec)
 	require.Equal(t, v1Beta2ReservationWithoutGPU.Status, v1beta2ResConverted.Status)
 	require.Empty(t, v1beta2ResConverted.ObjectMeta.Annotations)
+}
+
+func TestConversionFromV2ToV1ToV2AfterChangingValuesInV1(t *testing.T) {
+	// We expect the final v1Beta2 struct to contain the changes that we made to the v1 struct as well as the gpu information
+	// from the initial v2 object.
+
+	// Convert to v1beta1
+	var v1beta1ResConverted ResourceReservation
+	err := v1beta1ResConverted.ConvertFrom(&v1Beta2ReservationWithGPU)
+	if err != nil {
+		t.Fatalf("Conversion from v1Beta2 to v1Beta1 failed with err: %s", err)
+	}
+
+	// Change the reservation object
+	reservation, _ := v1beta1ResConverted.Spec.Reservations["driver"]
+	reservation.CPU = *resource.NewQuantity(10, resource.DecimalSI)
+	v1beta1ResConverted.Spec.Reservations["driver"] = reservation
+
+	// Convert back to v1beta2
+	var v1beta2ResConverted v1beta2.ResourceReservation
+	err = v1beta1ResConverted.ConvertTo(&v1beta2ResConverted)
+	if err != nil {
+		t.Fatalf("Conversion from v1Beta1 to v1Beta2 failed with err: %s", err)
+	}
+
+	compareV1Beta2ResourceReservationSpecs(t, &v1Beta2ReservationWithGPUAndPreConversionChanges.Spec, &v1beta2ResConverted.Spec)
+	require.Equal(t, v1Beta2ReservationWithGPUAndPreConversionChanges.Status, v1beta2ResConverted.Status)
+	require.Empty(t, v1Beta2ReservationWithGPUAndPreConversionChanges.ObjectMeta.Annotations)
 }
 
 func cacheStringValuesOfReservations(r *v1beta2.ResourceReservationSpec) {
