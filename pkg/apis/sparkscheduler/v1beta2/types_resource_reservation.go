@@ -21,10 +21,6 @@ import (
 )
 
 const (
-	// InstanceGroupLabel represents the key of a label that defines the name of the instance group
-	InstanceGroupLabel = "instance-group"
-	// AppIDLabel represents the key of a label that defines the application ID of a pod
-
 	// ResourceCPU is the name of CPU resource.
 	ResourceCPU corev1.ResourceName = corev1.ResourceCPU
 	// ResourceMemory is the name of Memory resource.
