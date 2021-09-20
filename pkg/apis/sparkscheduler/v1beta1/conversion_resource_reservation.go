@@ -24,8 +24,7 @@ import (
 )
 
 // ConvertTo converts from v1beta1 to the storage version v1beta2
-// We first try to take values from the ReservationsAnnotation.
-// If the ReservationsAnnotation does not exist then we take the values directly from the struct.
+// We first try to take values the v1beta1 struct, we then take all remaining values from the annotations.
 func (rr *ResourceReservation) ConvertTo(dstRaw conversion.Hub) error {
 	dst, ok := dstRaw.(*v1beta2.ResourceReservation)
 	if !ok {
