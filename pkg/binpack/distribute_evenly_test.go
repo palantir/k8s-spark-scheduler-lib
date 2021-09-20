@@ -23,15 +23,16 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-func createResources(cpu, memory int64) *resources.Resources {
+func createResources(cpu, memory, nvidiaGPU int64) *resources.Resources {
 	return &resources.Resources{
-		CPU:    *resource.NewQuantity(cpu, resource.DecimalSI),
-		Memory: *resource.NewQuantity(memory, resource.BinarySI),
+		CPU:       *resource.NewQuantity(cpu, resource.DecimalSI),
+		Memory:    *resource.NewQuantity(memory, resource.BinarySI),
+		NvidiaGPU: *resource.NewQuantity(nvidiaGPU, resource.BinarySI),
 	}
 }
-func createSchedulingMetadata(cpu, memory int64, zoneLabel string) *resources.NodeSchedulingMetadata {
+func createSchedulingMetadata(cpu, memory, nvidiaGPU int64, zoneLabel string) *resources.NodeSchedulingMetadata {
 	return &resources.NodeSchedulingMetadata{
-		AvailableResources: createResources(cpu, memory),
+		AvailableResources: createResources(cpu, memory, nvidiaGPU),
 		ZoneLabel:          zoneLabel,
 	}
 }
@@ -49,12 +50,12 @@ func TestDistributeEvenly(t *testing.T) {
 		expectedCounts          map[string]int
 	}{{
 		name:              "application fits",
-		driverResources:   createResources(1, 3),
-		executorResources: createResources(2, 5),
+		driverResources:   createResources(1, 3, 1),
+		executorResources: createResources(2, 5, 1),
 		numExecutors:      2,
 		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
-			"n1": createSchedulingMetadata(5, 10, "zone1"),
-			"n2": createSchedulingMetadata(4, 5, "zone1"),
+			"n1": createSchedulingMetadata(5, 10, 3, "zone1"),
+			"n2": createSchedulingMetadata(4, 5, 3, "zone1"),
 		}),
 		nodePriorityOrder:  []string{"n1", "n2"},
 		expectedDriverNode: "n1",
@@ -62,24 +63,24 @@ func TestDistributeEvenly(t *testing.T) {
 		expectedCounts:     map[string]int{"n1": 1, "n2": 1},
 	}, {
 		name:              "driver memory does not fit",
-		driverResources:   createResources(2, 4),
-		executorResources: createResources(1, 1),
+		driverResources:   createResources(2, 4, 1),
+		executorResources: createResources(1, 1, 1),
 		numExecutors:      1,
 		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
-			"n1": createSchedulingMetadata(2, 3, "zone1"),
+			"n1": createSchedulingMetadata(2, 3, 2, "zone1"),
 		}),
 		nodePriorityOrder: []string{"n1"},
 		willFit:           false,
 		expectedCounts:    nil,
 	}, {
 		name:              "application perfectly fits",
-		driverResources:   createResources(1, 2),
-		executorResources: createResources(1, 1),
+		driverResources:   createResources(1, 2, 1),
+		executorResources: createResources(1, 1, 1),
 		numExecutors:      40,
 		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
-			"n1": createSchedulingMetadata(13, 14, "zone1"),
-			"n2": createSchedulingMetadata(12, 12, "zone1"),
-			"n3": createSchedulingMetadata(16, 16, "zone1"),
+			"n1": createSchedulingMetadata(13, 14, 13, "zone1"),
+			"n2": createSchedulingMetadata(12, 12, 12, "zone1"),
+			"n3": createSchedulingMetadata(16, 16, 16, "zone1"),
 		}),
 		nodePriorityOrder:  []string{"n1", "n2", "n3"},
 		expectedDriverNode: "n1",
@@ -87,12 +88,12 @@ func TestDistributeEvenly(t *testing.T) {
 		expectedCounts:     map[string]int{"n1": 12, "n2": 12, "n3": 16},
 	}, {
 		name:              "executor cpu do not fit",
-		driverResources:   createResources(1, 1),
-		executorResources: createResources(1, 2),
+		driverResources:   createResources(1, 1, 0),
+		executorResources: createResources(1, 2, 1),
 		numExecutors:      8,
 		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
 			"n1": {
-				AvailableResources: createResources(8, 20),
+				AvailableResources: createResources(8, 20, 8),
 			},
 		}),
 		nodePriorityOrder: []string{"n1"},
@@ -100,13 +101,13 @@ func TestDistributeEvenly(t *testing.T) {
 		expectedCounts:    nil,
 	}, {
 		name:              "Fits when cluster has more nodes than executors",
-		driverResources:   createResources(1, 2),
-		executorResources: createResources(2, 3),
+		driverResources:   createResources(1, 2, 1),
+		executorResources: createResources(2, 3, 1),
 		numExecutors:      2,
 		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
-			"n1": createSchedulingMetadata(8, 20, "zone1"),
-			"n2": createSchedulingMetadata(8, 20, "zone1"),
-			"n3": createSchedulingMetadata(8, 20, "zone1"),
+			"n1": createSchedulingMetadata(8, 20, 8, "zone1"),
+			"n2": createSchedulingMetadata(8, 20, 8, "zone1"),
+			"n3": createSchedulingMetadata(8, 20, 8, "zone1"),
 		}),
 		nodePriorityOrder:  []string{"n1", "n2", "n3"},
 		expectedDriverNode: "n1",
