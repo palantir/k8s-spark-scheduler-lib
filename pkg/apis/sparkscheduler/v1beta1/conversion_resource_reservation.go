@@ -64,8 +64,8 @@ func (rr *ResourceReservation) ConvertTo(dstRaw conversion.Hub) error {
 			return err
 		}
 		for key, annotationReservation := range annotationResourceReservationSpec.Reservations {
-			// If the annotationReservation did not exist in the annotationReservation objects of the v1 struct,
-			// make the annotationReservation with an empty resource list
+			// If the reservation did not exist in the reservations of the v1 struct,
+			// make the reservation with an empty resource list
 			if val, ok := dst.Spec.Reservations[key]; !ok {
 				dst.Spec.Reservations[key] = v1beta2.Reservation{
 					Node:      val.Node,
@@ -104,7 +104,6 @@ func (rr *ResourceReservation) ConvertFrom(srcRaw conversion.Hub) error {
 		rr.ObjectMeta.Annotations = make(map[string]string, 1)
 	}
 	rr.ObjectMeta.Annotations[ReservationsAnnotation] = string(reservationSpecBytes)
-
 	rr.Status.Pods = make(map[string]string, len(src.Status.Pods))
 	for key, value := range src.Status.Pods {
 		rr.Status.Pods[key] = value
