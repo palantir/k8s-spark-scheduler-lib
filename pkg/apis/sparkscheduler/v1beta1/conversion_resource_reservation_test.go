@@ -184,8 +184,7 @@ func cacheStringValuesOfReservations(r *v1beta2.ResourceReservationSpec) {
 	// Calling String() caches the string value of the quantity, unmarshalled reservations already have this so we need
 	// to call it for all reservations to get deep equality to be consistent
 	for _, value := range r.Reservations {
-		cpu := value.Resources.CPU()
-		_ = cpu.String()
+		_ = value.Resources.CPU().String()
 		_ = value.Resources.Memory().String()
 		_ = value.Resources.NvidiaGPU().String()
 	}
