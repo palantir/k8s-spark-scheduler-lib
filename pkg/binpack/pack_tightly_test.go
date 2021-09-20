@@ -109,7 +109,20 @@ func TestTightlyPack(t *testing.T) {
 		expectedDriverNode: "n1",
 		willFit:            true,
 		expectedCounts:     nil,
-	}}
+	}, {
+		name:              "executor gpu does not fit",
+		driverResources:   createResources(1, 1, 1),
+		executorResources: createResources(1, 1, 1),
+		numExecutors:      4,
+		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
+			"n1_z1": createSchedulingMetadata(4, 4, 4, "z1"),
+			"n1_z2": createSchedulingMetadata(128, 128, 0, "z2"),
+		}),
+		nodePriorityOrder:  []string{"n1_z1", "n1_z2"},
+		expectedDriverNode: "n1_z1",
+		willFit:            false,
+	},
+	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
