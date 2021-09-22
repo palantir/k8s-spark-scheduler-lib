@@ -109,10 +109,12 @@ func (rr *ResourceReservation) ConvertFrom(srcRaw conversion.Hub) error {
 
 	rr.Spec.Reservations = make(map[string]Reservation, len(src.Spec.Reservations))
 	for key, value := range src.Spec.Reservations {
+		cpu := value.Resources.CPU().DeepCopy()
+		memory := value.Resources.Memory().DeepCopy()
 		rr.Spec.Reservations[key] = Reservation{
 			Node:   value.Node,
-			CPU:    *value.Resources.CPU(),
-			Memory: *value.Resources.Memory(),
+			CPU:    cpu,
+			Memory: memory,
 		}
 	}
 	return nil
