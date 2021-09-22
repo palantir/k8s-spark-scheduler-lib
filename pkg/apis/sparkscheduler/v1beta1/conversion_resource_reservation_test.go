@@ -16,9 +16,9 @@
 package v1beta1
 
 import (
-	"github.com/palantir/k8s-spark-scheduler-lib/pkg/apis/sparkscheduler"
 	"testing"
 
+	"github.com/palantir/k8s-spark-scheduler-lib/pkg/apis/sparkscheduler"
 	"github.com/palantir/k8s-spark-scheduler-lib/pkg/apis/sparkscheduler/v1beta2"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/resource"

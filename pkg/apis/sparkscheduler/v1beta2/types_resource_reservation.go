@@ -29,6 +29,10 @@ const (
 	ResourceNvidiaGPU corev1.ResourceName = "nvidia.com/gpu"
 )
 
+var (
+	SupportedV1Beta2ResourceTypes = [...]corev1.ResourceName{ResourceCPU, ResourceMemory, ResourceNvidiaGPU}
+)
+
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ResourceReservationList represents a list of ResourceReservations
