@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// These tests test conversion between v1beta1 and v1beta2 of the resource reservation CRD.
 package v1beta1
 
 import (
