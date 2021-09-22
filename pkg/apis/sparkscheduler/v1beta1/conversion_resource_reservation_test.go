@@ -227,6 +227,33 @@ func TestConversionFromV2ToV1ToV2AfterAddingReservationsInV1(t *testing.T) {
 	require.Empty(t, v1Beta2ReservationWithGPUAndAdditionalExecutor.ObjectMeta.Annotations)
 }
 
+func TestConversionFromV2ToV1ToV2AfterRemovingReservationsInV1(t *testing.T) {
+	// We expect the final v1Beta2 struct to contain the changes that we made to the v1 struct as well as the gpu information
+	// from the initial v2 object.
+
+	// Convert to v1beta1
+	var v1beta1ResConverted ResourceReservation
+	err := v1beta1ResConverted.ConvertFrom(&v1Beta2ReservationWithGPUAndAdditionalExecutor)
+	if err != nil {
+		t.Fatalf("Conversion from v1Beta2 to v1Beta1 failed with err: %s", err)
+	}
+
+	// Remove executor reservation
+	delete(v1beta1ResConverted.Spec.Reservations, "executor")
+	delete(v1beta1ResConverted.Status.Pods, "executor")
+
+	// Convert back to v1beta2
+	var v1beta2ResConverted v1beta2.ResourceReservation
+	err = v1beta1ResConverted.ConvertTo(&v1beta2ResConverted)
+	if err != nil {
+		t.Fatalf("Conversion from v1Beta1 to v1Beta2 failed with err: %s", err)
+	}
+
+	compareV1Beta2ResourceReservationSpecs(t, &v1Beta2ReservationWithGPU.Spec, &v1beta2ResConverted.Spec)
+	require.Equal(t, v1Beta2ReservationWithGPU.Status, v1beta2ResConverted.Status)
+	require.Empty(t, v1Beta2ReservationWithGPU.ObjectMeta.Annotations)
+}
+
 func cacheStringValuesOfReservations(r *v1beta2.ResourceReservationSpec) {
 	// Calling String() caches the string value of the quantity, unmarshalled reservations already have this so we need
 	// to call it for all reservations to get deep equality to be consistent
