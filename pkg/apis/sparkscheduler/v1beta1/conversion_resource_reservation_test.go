@@ -15,6 +15,7 @@
 package v1beta1
 
 import (
+	"strconv"
 	"testing"
 
 	"github.com/palantir/k8s-spark-scheduler-lib/pkg/apis/sparkscheduler"
@@ -36,18 +37,7 @@ var v1Beta1ReservationWithGPU = ResourceReservation{
 		"driver": "test_driver",
 	}},
 	ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
-		sparkscheduler.ReservationSpecAnnotationKey: `{
-			"reservations": {
-				"driver": {
-					"node": "test_node",
-					"resources": {
-						"` + string(v1beta2.ResourceCPU) + `": "1",
-						"` + string(v1beta2.ResourceMemory) + `": "2",
-						"` + string(v1beta2.ResourceNvidiaGPU) + `": "3"
-					}
-				}
-			}
-		}`,
+		sparkscheduler.ReservationSpecAnnotationKey: v1Beta2JsonDriverReservation(1, 2, 3),
 	}},
 }
 
@@ -194,4 +184,19 @@ func compareV1Beta2ResourceReservationSpecs(t *testing.T, r1 *v1beta2.ResourceRe
 	cacheStringValuesOfReservations(r1)
 	cacheStringValuesOfReservations(r2)
 	require.Equal(t, r1, r2)
+}
+
+func v1Beta2JsonDriverReservation(cpu, memory, gpus int) string {
+	return `{
+			"reservations": {
+				"driver": {
+					"node": "test_node",
+					"resources": {
+						"` + string(v1beta2.ResourceCPU) + `": "` + strconv.Itoa(cpu) + `",
+						"` + string(v1beta2.ResourceMemory) + `": "` + strconv.Itoa(memory) + `",
+						"` + string(v1beta2.ResourceNvidiaGPU) + `": "` + strconv.Itoa(gpus) + `"
+					}
+				}
+			}
+		}`
 }
