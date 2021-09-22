@@ -30,6 +30,7 @@ const (
 )
 
 var (
+	// SupportedV1Beta2ResourceTypes is the list of resources explicitly used for scheduling in this version of scheduler
 	SupportedV1Beta2ResourceTypes = [...]corev1.ResourceName{ResourceCPU, ResourceMemory, ResourceNvidiaGPU}
 )
 
