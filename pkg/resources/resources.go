@@ -123,11 +123,12 @@ func (nodesSchedulingMetadata NodeGroupSchedulingMetadata) SubtractUsageIfExists
 func subtractFromResourceList(resourceList corev1.ResourceList, resources *Resources) *Resources {
 	// (a - b) == -(b - a)
 	copyResources := resources.Copy()
-	copyResources.CPU.Sub(resourceList[corev1.ResourceCPU])
+	resourcesToSubtractFrom := getResourcesFromResourceList(resourceList)
+	copyResources.CPU.Sub(resourcesToSubtractFrom.CPU)
 	copyResources.CPU.Neg()
-	copyResources.Memory.Sub(resourceList[corev1.ResourceMemory])
+	copyResources.Memory.Sub(resourcesToSubtractFrom.Memory)
 	copyResources.Memory.Neg()
-	copyResources.NvidiaGPU.Sub(resourceList[v1beta2.ResourceNvidiaGPU])
+	copyResources.NvidiaGPU.Sub(resourcesToSubtractFrom.NvidiaGPU)
 	copyResources.NvidiaGPU.Neg()
 	return copyResources
 }
@@ -147,6 +148,14 @@ type NodeSchedulingMetadata struct {
 	AllLabels          map[string]string
 	Unschedulable      bool
 	Ready              bool
+}
+
+func getResourcesFromResourceList(resourceList corev1.ResourceList) Resources {
+	return Resources{
+		CPU:       resourceList[corev1.ResourceCPU],
+		Memory:    resourceList[corev1.ResourceMemory],
+		NvidiaGPU: resourceList[v1beta2.ResourceNvidiaGPU],
+	}
 }
 
 // Zero returns a Resources object with quantities of zero
@@ -190,24 +199,23 @@ func (r *Resources) Sub(other *Resources) {
 
 // AddFromResourceList modified the receiver in place
 func (r *Resources) AddFromResourceList(resourceList corev1.ResourceList) {
-	r.CPU.Add(resourceList[corev1.ResourceCPU])
-	r.Memory.Add(resourceList[corev1.ResourceMemory])
-	r.NvidiaGPU.Add(resourceList[v1beta2.ResourceNvidiaGPU])
+	otherResources := getResourcesFromResourceList(resourceList)
+	r.CPU.Add(otherResources.CPU)
+	r.Memory.Add(otherResources.Memory)
+	r.NvidiaGPU.Add(otherResources.NvidiaGPU)
 }
 
 // SetMaxResource modifies the receiver in place to set each resource to the greater value of itself or the corresponding resource in resourceList
 func (r *Resources) SetMaxResource(resourceList corev1.ResourceList) {
-	cpuResource := resourceList[corev1.ResourceCPU]
-	memResource := resourceList[corev1.ResourceMemory]
-	nvidiaGPUResource := resourceList[v1beta2.ResourceNvidiaGPU]
-	if cpuResource.Cmp(r.CPU) > 0 {
-		r.CPU = cpuResource.DeepCopy()
+	otherResources := getResourcesFromResourceList(resourceList)
+	if otherResources.CPU.Cmp(r.CPU) > 0 {
+		r.CPU = otherResources.CPU.DeepCopy()
 	}
-	if memResource.Cmp(r.Memory) > 0 {
-		r.Memory = memResource.DeepCopy()
+	if otherResources.Memory.Cmp(r.Memory) > 0 {
+		r.Memory = otherResources.Memory.DeepCopy()
 	}
-	if nvidiaGPUResource.Cmp(r.NvidiaGPU) > 0 {
-		r.NvidiaGPU = nvidiaGPUResource.DeepCopy()
+	if otherResources.NvidiaGPU.Cmp(r.NvidiaGPU) > 0 {
+		r.NvidiaGPU = otherResources.NvidiaGPU.DeepCopy()
 	}
 }
 
