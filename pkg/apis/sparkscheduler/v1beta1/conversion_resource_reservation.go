@@ -64,19 +64,14 @@ func (rr *ResourceReservation) ConvertTo(dstRaw conversion.Hub) error {
 			return err
 		}
 		for key, annotationReservation := range annotationResourceReservationSpec.Reservations {
-			// If the reservation did not exist in the reservations of the v1beta1 struct,
-			// make the reservation with an empty resource list
-			if val, ok := dst.Spec.Reservations[key]; !ok {
-				dst.Spec.Reservations[key] = v1beta2.Reservation{
-					Node:      val.Node,
-					Resources: v1beta2.ResourceList{},
+			if _, ok := dst.Spec.Reservations[key]; !ok {
+				// Add all resources we could not get from the v1beta1 struct to the resource list, e.g. NvidiaGPU
+				for resourceName, quantity := range annotationReservation.Resources {
+					if _, ok := dst.Spec.Reservations[key].Resources[resourceName]; !ok {
+						dst.Spec.Reservations[key].Resources[resourceName] = quantity
+					}
 				}
-			}
-			// Add all resources we could not get from the v1beta1 struct to the resource list, e.g. NvidiaGPU
-			for resourceName, quantity := range annotationReservation.Resources {
-				if _, ok := dst.Spec.Reservations[key].Resources[resourceName]; !ok {
-					dst.Spec.Reservations[key].Resources[resourceName] = quantity
-				}
+
 			}
 		}
 	}
