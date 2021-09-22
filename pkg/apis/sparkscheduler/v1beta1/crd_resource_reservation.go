@@ -27,7 +27,7 @@ var v1beta1VersionDefinition = v1.CustomResourceDefinitionVersion{
 	AdditionalPrinterColumns: []v1.CustomResourceColumnDefinition{{
 		Name:        "driver",
 		Type:        "string",
-		JSONPath:    ".status.driverPod",
+		JSONPath:    ".status.pods.driver",
 		Description: "Pod name of the driver",
 	}},
 	Schema: &v1.CustomResourceValidation{
