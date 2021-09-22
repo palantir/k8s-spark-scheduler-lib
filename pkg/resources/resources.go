@@ -15,9 +15,9 @@
 package resources
 
 import (
-	"github.com/palantir/k8s-spark-scheduler-lib/pkg/apis/sparkscheduler/v1beta1"
 	"time"
 
+	"github.com/palantir/k8s-spark-scheduler-lib/pkg/apis/sparkscheduler/v1beta1"
 	"github.com/palantir/k8s-spark-scheduler-lib/pkg/apis/sparkscheduler/v1beta2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -249,5 +249,5 @@ func (r *Resources) GreaterThan(other *Resources) bool {
 
 // Eq returns true if all of CPU, Memory and NvidiaGPU quantities are equal between this Resources object and other
 func (r *Resources) Eq(other *Resources) bool {
-	return r.CPU.Cmp(other.CPU) == 0 && r.Memory.Cmp(other.Memory) == 0 && r.NvidiaGPU.Cmp(other.CPU) == 0
+	return r.CPU.Cmp(other.CPU) == 0 && r.Memory.Cmp(other.Memory) == 0 && r.NvidiaGPU.Cmp(other.NvidiaGPU) == 0
 }
