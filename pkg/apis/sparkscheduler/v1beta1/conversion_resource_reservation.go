@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/palantir/k8s-spark-scheduler-lib/pkg/apis/sparkscheduler"
 	"github.com/palantir/k8s-spark-scheduler-lib/pkg/apis/sparkscheduler/v1beta2"
 	werror "github.com/palantir/witchcraft-go-error"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
@@ -35,47 +36,45 @@ func (rr *ResourceReservation) ConvertTo(dstRaw conversion.Hub) error {
 
 	dst.ObjectMeta = *rr.ObjectMeta.DeepCopy()
 
-	// Remove the reservation annotation metadata as we don't need it in a v2 object.
-	delete(dst.ObjectMeta.Annotations, ReservationsAnnotation)
+	// Remove the reservation annotation metadata as we don't need it in a v1beta2 object.
+	delete(dst.ObjectMeta.Annotations, sparkscheduler.ReservationSpecAnnotationKey)
 
 	dst.Status.Pods = make(map[string]string, len(rr.Status.Pods))
 	for key, value := range rr.Status.Pods {
 		dst.Status.Pods[key] = value
 	}
 
-	// Take the common values from the v1 struct
+	// Take the common values from the v1beta1 struct
 	dst.Spec.Reservations = make(map[string]v1beta2.Reservation, len(rr.Spec.Reservations))
 	for key, value := range rr.Spec.Reservations {
+		cpu := value.CPU.DeepCopy()
+		memory := value.Memory.DeepCopy()
 		dst.Spec.Reservations[key] = v1beta2.Reservation{
 			Node: value.Node,
 			Resources: v1beta2.ResourceList{
-				string(v1beta2.ResourceCPU):    &value.CPU,
-				string(v1beta2.ResourceMemory): &value.Memory,
+				string(v1beta2.ResourceCPU):    &cpu,
+				string(v1beta2.ResourceMemory): &memory,
 			},
 		}
 	}
 
-	// Attempt to take any other values from the ReservationsAnnotation
-	if annotationResourceReservationSpecJSON, ok := rr.ObjectMeta.Annotations[ReservationsAnnotation]; ok {
+	// Attempt to take any other values from the ReservationSpecAnnotationKey
+	if annotationResourceReservationSpecJSON, ok := rr.ObjectMeta.Annotations[sparkscheduler.ReservationSpecAnnotationKey]; ok {
 		var annotationResourceReservationSpec v1beta2.ResourceReservationSpec
 		err := json.Unmarshal([]byte(annotationResourceReservationSpecJSON), &annotationResourceReservationSpec)
 		if err != nil {
 			return err
 		}
 		for key, annotationReservation := range annotationResourceReservationSpec.Reservations {
-			// If the reservation did not exist in the reservations of the v1 struct,
-			// make the reservation with an empty resource list
-			if val, ok := dst.Spec.Reservations[key]; !ok {
-				dst.Spec.Reservations[key] = v1beta2.Reservation{
-					Node:      val.Node,
-					Resources: v1beta2.ResourceList{},
+			if _, ok := dst.Spec.Reservations[key]; ok {
+				// Add all resources we could not get from the v1beta1 struct to the resource list, e.g. NvidiaGPU
+				for resourceName, quantity := range annotationReservation.Resources {
+					if _, ok := dst.Spec.Reservations[key].Resources[resourceName]; !ok {
+						quantityCopy := quantity.DeepCopy()
+						dst.Spec.Reservations[key].Resources[resourceName] = &quantityCopy
+					}
 				}
-			}
-			// Add all resources we could not get from the v1 struct to the resource list, e.g. NvidiaGPU
-			for resourceName, quantity := range annotationReservation.Resources {
-				if _, ok := dst.Spec.Reservations[key].Resources[resourceName]; !ok {
-					dst.Spec.Reservations[key].Resources[resourceName] = quantity
-				}
+
 			}
 		}
 	}
@@ -102,7 +101,7 @@ func (rr *ResourceReservation) ConvertFrom(srcRaw conversion.Hub) error {
 	if rr.ObjectMeta.Annotations == nil {
 		rr.ObjectMeta.Annotations = make(map[string]string, 1)
 	}
-	rr.ObjectMeta.Annotations[ReservationsAnnotation] = string(reservationSpecBytes)
+	rr.ObjectMeta.Annotations[sparkscheduler.ReservationSpecAnnotationKey] = string(reservationSpecBytes)
 	rr.Status.Pods = make(map[string]string, len(src.Status.Pods))
 	for key, value := range src.Status.Pods {
 		rr.Status.Pods[key] = value
@@ -110,10 +109,12 @@ func (rr *ResourceReservation) ConvertFrom(srcRaw conversion.Hub) error {
 
 	rr.Spec.Reservations = make(map[string]Reservation, len(src.Spec.Reservations))
 	for key, value := range src.Spec.Reservations {
+		cpu := value.Resources.CPU().DeepCopy()
+		memory := value.Resources.Memory().DeepCopy()
 		rr.Spec.Reservations[key] = Reservation{
 			Node:   value.Node,
-			CPU:    *value.Resources.CPU(),
-			Memory: *value.Resources.Memory(),
+			CPU:    cpu,
+			Memory: memory,
 		}
 	}
 	return nil

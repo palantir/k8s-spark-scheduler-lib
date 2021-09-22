@@ -15,11 +15,10 @@
 package v1beta2
 
 import (
+	"github.com/palantir/k8s-spark-scheduler-lib/pkg/apis/sparkscheduler"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-const resourceReservationCRDName = ResourceReservationPlural + "." + GroupName
 
 var v1beta2VersionDefinition = v1.CustomResourceDefinitionVersion{
 	Name:    "v1beta2",
@@ -28,7 +27,7 @@ var v1beta2VersionDefinition = v1.CustomResourceDefinitionVersion{
 	AdditionalPrinterColumns: []v1.CustomResourceColumnDefinition{{
 		Name:        "driver",
 		Type:        "string",
-		JSONPath:    ".status.driverPod",
+		JSONPath:    ".status.pods.driver",
 		Description: "Pod name of the driver",
 	}},
 	Schema: &v1.CustomResourceValidation{
@@ -92,16 +91,16 @@ var v1beta2VersionDefinition = v1.CustomResourceDefinitionVersion{
 
 var resourceReservationDefinition = &v1.CustomResourceDefinition{
 	ObjectMeta: metav1.ObjectMeta{
-		Name: resourceReservationCRDName,
+		Name: sparkscheduler.ResourceReservationCRDName,
 	},
 	Spec: v1.CustomResourceDefinitionSpec{
-		Group: GroupName,
+		Group: sparkscheduler.GroupName,
 		Versions: []v1.CustomResourceDefinitionVersion{
 			v1beta2VersionDefinition,
 		},
 		Scope: v1.NamespaceScoped,
 		Names: v1.CustomResourceDefinitionNames{
-			Plural:     ResourceReservationPlural,
+			Plural:     sparkscheduler.ResourceReservationPlural,
 			Kind:       "ResourceReservation",
 			ShortNames: []string{"rr"},
 			Categories: []string{"all"},

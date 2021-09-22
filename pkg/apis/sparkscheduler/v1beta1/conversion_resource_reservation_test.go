@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// These tests test conversion between v1beta1 and v1beta2 of the resource reservation CRD.
 package v1beta1
 
 import (
+	"strconv"
 	"testing"
 
+	"github.com/palantir/k8s-spark-scheduler-lib/pkg/apis/sparkscheduler"
 	"github.com/palantir/k8s-spark-scheduler-lib/pkg/apis/sparkscheduler/v1beta2"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -36,18 +37,7 @@ var v1Beta1ReservationWithGPU = ResourceReservation{
 		"driver": "test_driver",
 	}},
 	ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
-		ReservationsAnnotation: `{
-			"reservations": {
-				"driver": {
-					"node": "test_node",
-					"resources": {
-						"` + string(v1beta2.ResourceCPU) + `": "1",
-						"` + string(v1beta2.ResourceMemory) + `": "2",
-						"` + string(v1beta2.ResourceNvidiaGPU) + `": "3"
-					}
-				}
-			}
-		}`,
+		sparkscheduler.ReservationSpecAnnotationKey: v1Beta2JsonDriverReservation(1, 2, 3),
 	}},
 }
 
@@ -98,6 +88,31 @@ var v1Beta2ReservationWithGPUAndPreConversionChanges = v1beta2.ResourceReservati
 	}},
 }
 
+var v1Beta2ReservationWithGPUAndAdditionalExecutor = v1beta2.ResourceReservation{
+	Spec: v1beta2.ResourceReservationSpec{
+		Reservations: map[string]v1beta2.Reservation{
+			"driver": {
+				Node: "test_node",
+				Resources: v1beta2.ResourceList{
+					string(v1beta2.ResourceCPU):       resource.NewQuantity(1, resource.DecimalSI),
+					string(v1beta2.ResourceMemory):    resource.NewQuantity(2, resource.BinarySI),
+					string(v1beta2.ResourceNvidiaGPU): resource.NewQuantity(3, resource.DecimalSI),
+				},
+			},
+			"executor": {
+				Node: "test_node",
+				Resources: v1beta2.ResourceList{
+					string(v1beta2.ResourceCPU):    resource.NewQuantity(20, resource.DecimalSI),
+					string(v1beta2.ResourceMemory): resource.NewQuantity(20, resource.BinarySI),
+				},
+			},
+		}},
+	Status: v1beta2.ResourceReservationStatus{Pods: map[string]string{
+		"driver":   "test_driver",
+		"executor": "test_executor",
+	}},
+}
+
 var v1Beta2ReservationWithoutGPU = v1beta2.ResourceReservation{
 	Spec: v1beta2.ResourceReservationSpec{
 		Reservations: map[string]v1beta2.Reservation{
@@ -123,7 +138,7 @@ func TestConversionFromV1Beta2ToV1Beta1WithGPUs(t *testing.T) {
 	}
 	require.Equal(t, v1Beta1ReservationWithGPU.Spec, v1beta1ResConverted.Spec)
 	require.Equal(t, v1Beta1ReservationWithGPU.Status, v1beta1ResConverted.Status)
-	require.JSONEq(t, v1Beta1ReservationWithGPU.ObjectMeta.Annotations[ReservationsAnnotation], v1beta1ResConverted.ObjectMeta.Annotations[ReservationsAnnotation])
+	require.JSONEq(t, v1Beta1ReservationWithGPU.ObjectMeta.Annotations[sparkscheduler.ReservationSpecAnnotationKey], v1beta1ResConverted.ObjectMeta.Annotations[sparkscheduler.ReservationSpecAnnotationKey])
 }
 
 func TestConversionFromV1Beta1ToV1Beta2WithGPUs(t *testing.T) {
@@ -180,6 +195,65 @@ func TestConversionFromV2ToV1ToV2AfterChangingValuesInV1(t *testing.T) {
 	require.Empty(t, v1Beta2ReservationWithGPUAndPreConversionChanges.ObjectMeta.Annotations)
 }
 
+func TestConversionFromV2ToV1ToV2AfterAddingReservationsInV1(t *testing.T) {
+	// We expect the final v1Beta2 struct to contain the changes that we made to the v1 struct as well as the gpu information
+	// from the initial v2 object.
+
+	// Convert to v1beta1
+	var v1beta1ResConverted ResourceReservation
+	err := v1beta1ResConverted.ConvertFrom(&v1Beta2ReservationWithGPU)
+	if err != nil {
+		t.Fatalf("Conversion from v1Beta2 to v1Beta1 failed with err: %s", err)
+	}
+
+	// Add reservation
+	executorReservation := Reservation{
+		Node:   "test_node",
+		CPU:    *resource.NewQuantity(20, resource.DecimalSI),
+		Memory: *resource.NewQuantity(20, resource.BinarySI),
+	}
+	v1beta1ResConverted.Spec.Reservations["executor"] = executorReservation
+	v1beta1ResConverted.Status.Pods["executor"] = "test_executor"
+
+	// Convert back to v1beta2
+	var v1beta2ResConverted v1beta2.ResourceReservation
+	err = v1beta1ResConverted.ConvertTo(&v1beta2ResConverted)
+	if err != nil {
+		t.Fatalf("Conversion from v1Beta1 to v1Beta2 failed with err: %s", err)
+	}
+
+	compareV1Beta2ResourceReservationSpecs(t, &v1Beta2ReservationWithGPUAndAdditionalExecutor.Spec, &v1beta2ResConverted.Spec)
+	require.Equal(t, v1Beta2ReservationWithGPUAndAdditionalExecutor.Status, v1beta2ResConverted.Status)
+	require.Empty(t, v1Beta2ReservationWithGPUAndAdditionalExecutor.ObjectMeta.Annotations)
+}
+
+func TestConversionFromV2ToV1ToV2AfterRemovingReservationsInV1(t *testing.T) {
+	// We expect the final v1Beta2 struct to contain the changes that we made to the v1 struct as well as the gpu information
+	// from the initial v2 object.
+
+	// Convert to v1beta1
+	var v1beta1ResConverted ResourceReservation
+	err := v1beta1ResConverted.ConvertFrom(&v1Beta2ReservationWithGPUAndAdditionalExecutor)
+	if err != nil {
+		t.Fatalf("Conversion from v1Beta2 to v1Beta1 failed with err: %s", err)
+	}
+
+	// Remove executor reservation
+	delete(v1beta1ResConverted.Spec.Reservations, "executor")
+	delete(v1beta1ResConverted.Status.Pods, "executor")
+
+	// Convert back to v1beta2
+	var v1beta2ResConverted v1beta2.ResourceReservation
+	err = v1beta1ResConverted.ConvertTo(&v1beta2ResConverted)
+	if err != nil {
+		t.Fatalf("Conversion from v1Beta1 to v1Beta2 failed with err: %s", err)
+	}
+
+	compareV1Beta2ResourceReservationSpecs(t, &v1Beta2ReservationWithGPU.Spec, &v1beta2ResConverted.Spec)
+	require.Equal(t, v1Beta2ReservationWithGPU.Status, v1beta2ResConverted.Status)
+	require.Empty(t, v1Beta2ReservationWithGPU.ObjectMeta.Annotations)
+}
+
 func cacheStringValuesOfReservations(r *v1beta2.ResourceReservationSpec) {
 	// Calling String() caches the string value of the quantity, unmarshalled reservations already have this so we need
 	// to call it for all reservations to get deep equality to be consistent
@@ -194,4 +268,19 @@ func compareV1Beta2ResourceReservationSpecs(t *testing.T, r1 *v1beta2.ResourceRe
 	cacheStringValuesOfReservations(r1)
 	cacheStringValuesOfReservations(r2)
 	require.Equal(t, r1, r2)
+}
+
+func v1Beta2JsonDriverReservation(cpu, memory, gpus int) string {
+	return `{
+			"reservations": {
+				"driver": {
+					"node": "test_node",
+					"resources": {
+						"` + string(v1beta2.ResourceCPU) + `": "` + strconv.Itoa(cpu) + `",
+						"` + string(v1beta2.ResourceMemory) + `": "` + strconv.Itoa(memory) + `",
+						"` + string(v1beta2.ResourceNvidiaGPU) + `": "` + strconv.Itoa(gpus) + `"
+					}
+				}
+			}
+		}`
 }

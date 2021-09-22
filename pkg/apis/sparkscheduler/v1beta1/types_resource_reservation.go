@@ -24,10 +24,6 @@ const (
 	InstanceGroupLabel = "instance-group"
 	// AppIDLabel represents the key of a label that defines the application ID of a pod
 	AppIDLabel = "app-id"
-
-	// ReservationsAnnotation is the annotation which holds the resource reservation spec in v1beta1 objects.
-	// This is set so that we don't lose information in round trip conversions
-	ReservationsAnnotation = "scaler.palantir.github.com/reservations"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
