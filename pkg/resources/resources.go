@@ -219,13 +219,13 @@ func (r *Resources) SetMaxResource(resourceList corev1.ResourceList) {
 	}
 }
 
-// GreaterThan returns true if either the CPU or Memory or NvidiaGPU quantities of this object are greater than those
+// GreaterThan returns true if any of CPU, Memory or NvidiaGPU quantities of this object are greater than those
 // of other
 func (r *Resources) GreaterThan(other *Resources) bool {
 	return r.CPU.Cmp(other.CPU) > 0 || r.Memory.Cmp(other.Memory) > 0 || r.NvidiaGPU.Cmp(other.NvidiaGPU) > 0
 }
 
-// Eq returns true if both CPU and Memory and NvidiaGPU quantities are equal between this Resources object and other
+// Eq returns true if all of CPU, Memory and NvidiaGPU quantities are equal between this Resources object and other
 func (r *Resources) Eq(other *Resources) bool {
 	return r.CPU.Cmp(other.CPU) == 0 && r.Memory.Cmp(other.Memory) == 0 && r.NvidiaGPU.Cmp(other.CPU) == 0
 }
