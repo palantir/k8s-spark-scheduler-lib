@@ -47,11 +47,13 @@ func (rr *ResourceReservation) ConvertTo(dstRaw conversion.Hub) error {
 	// Take the common values from the v1beta1 struct
 	dst.Spec.Reservations = make(map[string]v1beta2.Reservation, len(rr.Spec.Reservations))
 	for key, value := range rr.Spec.Reservations {
+		cpu := value.CPU.DeepCopy()
+		memory := value.Memory.DeepCopy()
 		dst.Spec.Reservations[key] = v1beta2.Reservation{
 			Node: value.Node,
 			Resources: v1beta2.ResourceList{
-				string(v1beta2.ResourceCPU):    &value.CPU,
-				string(v1beta2.ResourceMemory): &value.Memory,
+				string(v1beta2.ResourceCPU):    &cpu,
+				string(v1beta2.ResourceMemory): &memory,
 			},
 		}
 	}
@@ -64,11 +66,12 @@ func (rr *ResourceReservation) ConvertTo(dstRaw conversion.Hub) error {
 			return err
 		}
 		for key, annotationReservation := range annotationResourceReservationSpec.Reservations {
-			if _, ok := dst.Spec.Reservations[key]; !ok {
+			if _, ok := dst.Spec.Reservations[key]; ok {
 				// Add all resources we could not get from the v1beta1 struct to the resource list, e.g. NvidiaGPU
 				for resourceName, quantity := range annotationReservation.Resources {
 					if _, ok := dst.Spec.Reservations[key].Resources[resourceName]; !ok {
-						dst.Spec.Reservations[key].Resources[resourceName] = quantity
+						quantityCopy := quantity.DeepCopy()
+						dst.Spec.Reservations[key].Resources[resourceName] = &quantityCopy
 					}
 				}
 
