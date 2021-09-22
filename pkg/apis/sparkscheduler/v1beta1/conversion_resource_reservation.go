@@ -36,7 +36,7 @@ func (rr *ResourceReservation) ConvertTo(dstRaw conversion.Hub) error {
 	dst.ObjectMeta = *rr.ObjectMeta.DeepCopy()
 
 	// Remove the reservation annotation metadata as we don't need it in a v2 object.
-	delete(dst.ObjectMeta.Annotations, ReservationsAnnotation)
+	delete(dst.ObjectMeta.Annotations, ReservationSpecAnnotationKey)
 
 	dst.Status.Pods = make(map[string]string, len(rr.Status.Pods))
 	for key, value := range rr.Status.Pods {
@@ -55,8 +55,8 @@ func (rr *ResourceReservation) ConvertTo(dstRaw conversion.Hub) error {
 		}
 	}
 
-	// Attempt to take any other values from the ReservationsAnnotation
-	if annotationResourceReservationSpecJSON, ok := rr.ObjectMeta.Annotations[ReservationsAnnotation]; ok {
+	// Attempt to take any other values from the ReservationSpecAnnotationKey
+	if annotationResourceReservationSpecJSON, ok := rr.ObjectMeta.Annotations[ReservationSpecAnnotationKey]; ok {
 		var annotationResourceReservationSpec v1beta2.ResourceReservationSpec
 		err := json.Unmarshal([]byte(annotationResourceReservationSpecJSON), &annotationResourceReservationSpec)
 		if err != nil {
@@ -102,7 +102,7 @@ func (rr *ResourceReservation) ConvertFrom(srcRaw conversion.Hub) error {
 	if rr.ObjectMeta.Annotations == nil {
 		rr.ObjectMeta.Annotations = make(map[string]string, 1)
 	}
-	rr.ObjectMeta.Annotations[ReservationsAnnotation] = string(reservationSpecBytes)
+	rr.ObjectMeta.Annotations[ReservationSpecAnnotationKey] = string(reservationSpecBytes)
 	rr.Status.Pods = make(map[string]string, len(src.Status.Pods))
 	for key, value := range src.Status.Pods {
 		rr.Status.Pods[key] = value

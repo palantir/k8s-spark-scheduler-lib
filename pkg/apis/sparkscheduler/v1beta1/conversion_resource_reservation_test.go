@@ -36,7 +36,7 @@ var v1Beta1ReservationWithGPU = ResourceReservation{
 		"driver": "test_driver",
 	}},
 	ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
-		ReservationsAnnotation: `{
+		ReservationSpecAnnotationKey: `{
 			"reservations": {
 				"driver": {
 					"node": "test_node",
@@ -123,7 +123,7 @@ func TestConversionFromV1Beta2ToV1Beta1WithGPUs(t *testing.T) {
 	}
 	require.Equal(t, v1Beta1ReservationWithGPU.Spec, v1beta1ResConverted.Spec)
 	require.Equal(t, v1Beta1ReservationWithGPU.Status, v1beta1ResConverted.Status)
-	require.JSONEq(t, v1Beta1ReservationWithGPU.ObjectMeta.Annotations[ReservationsAnnotation], v1beta1ResConverted.ObjectMeta.Annotations[ReservationsAnnotation])
+	require.JSONEq(t, v1Beta1ReservationWithGPU.ObjectMeta.Annotations[ReservationSpecAnnotationKey], v1beta1ResConverted.ObjectMeta.Annotations[ReservationSpecAnnotationKey])
 }
 
 func TestConversionFromV1Beta1ToV1Beta2WithGPUs(t *testing.T) {
