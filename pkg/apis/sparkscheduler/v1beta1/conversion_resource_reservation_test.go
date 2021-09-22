@@ -16,6 +16,7 @@
 package v1beta1
 
 import (
+	"github.com/palantir/k8s-spark-scheduler-lib/pkg/apis/sparkscheduler"
 	"testing"
 
 	"github.com/palantir/k8s-spark-scheduler-lib/pkg/apis/sparkscheduler/v1beta2"
@@ -36,7 +37,7 @@ var v1Beta1ReservationWithGPU = ResourceReservation{
 		"driver": "test_driver",
 	}},
 	ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
-		ReservationSpecAnnotationKey: `{
+		sparkscheduler.ReservationSpecAnnotationKey: `{
 			"reservations": {
 				"driver": {
 					"node": "test_node",
@@ -123,7 +124,7 @@ func TestConversionFromV1Beta2ToV1Beta1WithGPUs(t *testing.T) {
 	}
 	require.Equal(t, v1Beta1ReservationWithGPU.Spec, v1beta1ResConverted.Spec)
 	require.Equal(t, v1Beta1ReservationWithGPU.Status, v1beta1ResConverted.Status)
-	require.JSONEq(t, v1Beta1ReservationWithGPU.ObjectMeta.Annotations[ReservationSpecAnnotationKey], v1beta1ResConverted.ObjectMeta.Annotations[ReservationSpecAnnotationKey])
+	require.JSONEq(t, v1Beta1ReservationWithGPU.ObjectMeta.Annotations[sparkscheduler.ReservationSpecAnnotationKey], v1beta1ResConverted.ObjectMeta.Annotations[sparkscheduler.ReservationSpecAnnotationKey])
 }
 
 func TestConversionFromV1Beta1ToV1Beta2WithGPUs(t *testing.T) {

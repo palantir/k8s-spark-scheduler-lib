@@ -24,11 +24,6 @@ const (
 	InstanceGroupLabel = "instance-group"
 	// AppIDLabel represents the key of a label that defines the application ID of a pod
 	AppIDLabel = "app-id"
-
-	// ReservationSpecAnnotationKey is the field we set in the object annotation which holds the resource reservation spec
-	// in objects with a version < latest version.
-	// This is set so that we don't lose information in round trip conversions.
-	ReservationSpecAnnotationKey = "scheduler.palantir.github.com/reservation-spec"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
