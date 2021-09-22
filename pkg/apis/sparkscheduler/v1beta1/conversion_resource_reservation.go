@@ -36,7 +36,7 @@ func (rr *ResourceReservation) ConvertTo(dstRaw conversion.Hub) error {
 
 	dst.ObjectMeta = *rr.ObjectMeta.DeepCopy()
 
-	// Remove the reservation annotation metadata as we don't need it in a v2 object.
+	// Remove the reservation annotation metadata as we don't need it in a v1beta2 object.
 	delete(dst.ObjectMeta.Annotations, sparkscheduler.ReservationSpecAnnotationKey)
 
 	dst.Status.Pods = make(map[string]string, len(rr.Status.Pods))
@@ -44,7 +44,7 @@ func (rr *ResourceReservation) ConvertTo(dstRaw conversion.Hub) error {
 		dst.Status.Pods[key] = value
 	}
 
-	// Take the common values from the v1 struct
+	// Take the common values from the v1beta1 struct
 	dst.Spec.Reservations = make(map[string]v1beta2.Reservation, len(rr.Spec.Reservations))
 	for key, value := range rr.Spec.Reservations {
 		dst.Spec.Reservations[key] = v1beta2.Reservation{
@@ -64,7 +64,7 @@ func (rr *ResourceReservation) ConvertTo(dstRaw conversion.Hub) error {
 			return err
 		}
 		for key, annotationReservation := range annotationResourceReservationSpec.Reservations {
-			// If the reservation did not exist in the reservations of the v1 struct,
+			// If the reservation did not exist in the reservations of the v1beta1 struct,
 			// make the reservation with an empty resource list
 			if val, ok := dst.Spec.Reservations[key]; !ok {
 				dst.Spec.Reservations[key] = v1beta2.Reservation{
@@ -72,7 +72,7 @@ func (rr *ResourceReservation) ConvertTo(dstRaw conversion.Hub) error {
 					Resources: v1beta2.ResourceList{},
 				}
 			}
-			// Add all resources we could not get from the v1 struct to the resource list, e.g. NvidiaGPU
+			// Add all resources we could not get from the v1beta1 struct to the resource list, e.g. NvidiaGPU
 			for resourceName, quantity := range annotationReservation.Resources {
 				if _, ok := dst.Spec.Reservations[key].Resources[resourceName]; !ok {
 					dst.Spec.Reservations[key].Resources[resourceName] = quantity
