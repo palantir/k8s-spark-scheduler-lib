@@ -18,6 +18,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/palantir/k8s-spark-scheduler-lib/pkg/apis/sparkscheduler"
 	"github.com/palantir/k8s-spark-scheduler-lib/pkg/apis/sparkscheduler/v1beta2"
 	"github.com/stretchr/testify/require"
@@ -254,20 +255,10 @@ func TestConversionFromV2ToV1ToV2AfterRemovingReservationsInV1(t *testing.T) {
 	require.Empty(t, v1Beta2ReservationWithGPU.ObjectMeta.Annotations)
 }
 
-func cacheStringValuesOfReservations(r *v1beta2.ResourceReservationSpec) {
-	// Calling String() caches the string value of the quantity, unmarshalled reservations already have this so we need
-	// to call it for all reservations to get deep equality to be consistent
-	for _, value := range r.Reservations {
-		_ = value.Resources.CPU().String()
-		_ = value.Resources.Memory().String()
-		_ = value.Resources.NvidiaGPU().String()
-	}
-}
-
 func compareV1Beta2ResourceReservationSpecs(t *testing.T, r1 *v1beta2.ResourceReservationSpec, r2 *v1beta2.ResourceReservationSpec) {
-	cacheStringValuesOfReservations(r1)
-	cacheStringValuesOfReservations(r2)
-	require.Equal(t, r1, r2)
+	if !cmp.Equal(r1, r2) {
+		t.Fatalf("Resource reservation specs not equal: %s and %s", r1, r2)
+	}
 }
 
 func v1Beta2JsonDriverReservation(cpu, memory, gpus int) string {

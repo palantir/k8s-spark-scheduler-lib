@@ -3,6 +3,7 @@ module github.com/palantir/k8s-spark-scheduler-lib
 go 1.13
 
 require (
+	github.com/google/go-cmp v0.5.6
 	github.com/palantir/witchcraft-go-error v1.4.3
 	github.com/stretchr/testify v1.7.0
 	google.golang.org/appengine v1.6.1 // indirect

@@ -64,7 +64,7 @@ var v1beta2VersionDefinition = v1.CustomResourceDefinitionVersion{
 											Type: "string",
 										},
 										"resources": {
-											Type:     "object",
+											Type: "object",
 											AdditionalProperties: &v1.JSONSchemaPropsOrBool{
 												Schema: &v1.JSONSchemaProps{Type: "string"},
 											},
