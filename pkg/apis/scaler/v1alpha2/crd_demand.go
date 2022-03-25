@@ -51,6 +51,10 @@ var (
 								Format:   "date-time",
 								Nullable: true,
 							},
+							"proposed-zone": {
+								Type: "string",
+								Nullable: true,
+							},
 						},
 					},
 					"spec": {
@@ -62,6 +66,9 @@ var (
 								MinLength: &oneInt,
 							},
 							"is-long-lived": {
+								Type: "boolean",
+							},
+							"enforce-single-zone-scheduling": {
 								Type: "boolean",
 							},
 							"units": {
@@ -104,6 +111,16 @@ var (
 			Type:        "boolean",
 			JSONPath:    ".spec.is-long-lived",
 			Description: "The lifecycle description of the Demand request",
+		}, {
+			Name:        "single zone",
+			Type:        "boolean",
+			JSONPath:    ".spec.enforce-single-zone-scheduling",
+			Description: "The zone distribution description of the Demand request",
+		}, {
+			Name:        "proposed zone",
+			Type:        "boolean",
+			JSONPath:    ".status.proposed-zone",
+			Description: "The zone proposed for fulfilling the Demand request",
 		}, {
 			Name:        "units",
 			Type:        "string",
