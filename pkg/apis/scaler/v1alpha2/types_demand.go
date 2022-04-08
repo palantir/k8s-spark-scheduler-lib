@@ -98,9 +98,9 @@ type DemandStatus struct {
 	// If left empty, defaults to the creation time of the demand.
 	// +optional
 	LastTransitionTime metav1.Time `json:"last-transition-time,omitempty"`
-	// ProposedZone is the zone proposed for scaling to fulfill this demand.
-	// Note this does not guarantee the demand will be fulfilled by that zone.
-	ProposedZone string `json:"proposed-zone,omitempty"`
+	// FulfilledZone is the zone that was scaled up to satisfy this demand. Note this is only populated for
+	// single zone demands, and it does not guarantee that the demand resources will be scheduled in this zone.
+	FulfilledZone string `json:"fulfilled-zone,omitempty"`
 }
 
 // ResourceList is a set of (resource name, quantity) pairs.

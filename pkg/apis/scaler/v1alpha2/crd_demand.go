@@ -51,7 +51,7 @@ var (
 								Format:   "date-time",
 								Nullable: true,
 							},
-							"proposed-zone": {
+							"fulfilled-zone": {
 								Type: "string",
 								Nullable: true,
 							},
@@ -117,10 +117,10 @@ var (
 			JSONPath:    ".spec.enforce-single-zone-scheduling",
 			Description: "The zone distribution description of the Demand request",
 		}, {
-			Name:        "proposed zone",
+			Name:        "fulfilled zone",
 			Type:        "boolean",
-			JSONPath:    ".status.proposed-zone",
-			Description: "The zone proposed for fulfilling the Demand request",
+			JSONPath:    ".status.fulfilled-zone",
+			Description: "The zone scaled to satisfy the single zone Demand request",
 		}, {
 			Name:        "units",
 			Type:        "string",
