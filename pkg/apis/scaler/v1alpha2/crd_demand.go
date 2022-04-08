@@ -52,7 +52,7 @@ var (
 								Nullable: true,
 							},
 							"fulfilled-zone": {
-								Type: "string",
+								Type:     "string",
 								Nullable: true,
 							},
 						},
