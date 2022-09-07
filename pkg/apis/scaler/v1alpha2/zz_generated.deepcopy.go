@@ -79,11 +79,6 @@ func (in *DemandSpec) DeepCopyInto(out *DemandSpec) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
-	if in.Zone != nil {
-		in, out := &in.Zone, &out.Zone
-		*out = new(string)
-		**out = **in
-	}
 	return
 }
 
