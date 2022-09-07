@@ -93,7 +93,7 @@ type DemandSpec struct {
 	EnforceSingleZoneScheduling bool `json:"enforce-single-zone-scheduling"`
 	// Zone indicates the zone where the Demand should be fulfilled.
 	// If this parameter is not set, the Demand can be fulfilled in any zone.
-	Zone *string `json:"zone,omitempty"`
+	Zone Zone `json:"zone,omitempty"`
 }
 
 // DemandStatus represents the status a demand object is in
