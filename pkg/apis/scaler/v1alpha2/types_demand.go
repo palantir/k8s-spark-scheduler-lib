@@ -116,13 +116,10 @@ type ResourceList map[corev1.ResourceName]resource.Quantity
 type DemandUnit struct {
 	Resources ResourceList `json:"resources"`
 	Count     int          `json:"count"`
-	// Namespace contains the namespace of the pods that will occupy the space requested by the demand object.
+	// PodNamesByNamespace contains the name and namespace of the pods that will occupy the space requested by
+	// the demand object.
 	// This field is optional and used for deduplication.
-	Namespace *string      `json:"namespace,omitempty"`
-	// PodNames contains the list of pods that will occupy the space requested by the demand object.
-	// This field is optional and used for deduplication.
-	// If PodNames is non-empty, Namespace must be set.
-	PodNames  []string     `json:"pod-names,omitempty"`
+	PodNamesByNamespace map[string][]string `json:"pod-names-by-namespace,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
