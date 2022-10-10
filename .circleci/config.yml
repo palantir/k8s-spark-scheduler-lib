@@ -226,7 +226,7 @@ jobs:
       - *godel-cache-restore
       - *godel-version
       - *godel-cache-save
-      - run: ./hack/verify-codegen.sh
+#      - run: ./hack/verify-codegen.sh
       - run: ./godelw verify --apply=false --skip-test --skip-check
       - run: ./godelw check --parallel=false
       - *go-build-cache-save
