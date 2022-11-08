@@ -6,6 +6,8 @@ require (
 	github.com/google/go-cmp v0.5.6
 	github.com/palantir/witchcraft-go-error v1.4.3
 	github.com/stretchr/testify v1.7.0
+	// Pin for CVE-2022-27664
+	golang.org/x/net v0.0.0-20220906165146-f3363e06e74c // indirect
 	k8s.io/api v0.23.11
 	k8s.io/apiextensions-apiserver v0.23.11
 	k8s.io/apimachinery v0.23.11
@@ -38,10 +40,9 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	golang.org/x/mod v0.4.2 // indirect
-	golang.org/x/net v0.0.0-20211209124913-491a49abca63 // indirect
 	golang.org/x/oauth2 v0.0.0-20210819190943-2bc19b11175f // indirect
-	golang.org/x/sys v0.0.0-20210831042530-f4d43177bf5e // indirect
-	golang.org/x/term v0.0.0-20210615171337-6886f2dfbf5b // indirect
+	golang.org/x/sys v0.0.0-20220728004956-3c1f35247d10 // indirect
+	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
 	golang.org/x/tools v0.1.6-0.20210820212750-d4cc65f0b2ff // indirect
