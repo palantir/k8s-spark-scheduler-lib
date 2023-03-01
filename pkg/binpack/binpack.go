@@ -20,13 +20,30 @@ import (
 	"github.com/palantir/k8s-spark-scheduler-lib/pkg/resources"
 )
 
+// PackingResult is a result of one binpacking operation. When successful, assigns driver and
+// executors to nodes. Includes an overview of the resource assignment across nodes.
+type PackingResult struct {
+	driverNode    string
+	executorNodes []string
+	//reservedResources resources.NodeGroupResources
+	hasCapacity bool
+}
+
+func emptyPackingResult() *PackingResult {
+	return &PackingResult{
+		driverNode:    "",
+		executorNodes: nil,
+		hasCapacity:   false,
+	}
+}
+
 // SparkBinPackFunction is a function type for assigning nodes to spark drivers and executors
 type SparkBinPackFunction func(
 	ctx context.Context,
 	driverResources, executorResources *resources.Resources,
 	executorCount int,
 	driverNodePriorityOrder, executorNodePriorityOrder []string,
-	nodesSchedulingMetadata resources.NodeGroupSchedulingMetadata) (driverNode string, executorNodes []string, hasCapacity bool)
+	nodesSchedulingMetadata resources.NodeGroupSchedulingMetadata) *PackingResult
 
 // GenericBinPackFunction is a function type for assigning nodes to a batch of equivalent pods
 type GenericBinPackFunction func(
@@ -44,7 +61,7 @@ func SparkBinPack(
 	executorCount int,
 	driverNodePriorityOrder, executorNodePriorityOrder []string,
 	nodesSchedulingMetadata resources.NodeGroupSchedulingMetadata,
-	distributeExecutors GenericBinPackFunction) (driverNode string, executorNodes []string, hasCapacity bool) {
+	distributeExecutors GenericBinPackFunction) *PackingResult {
 	for _, name := range driverNodePriorityOrder {
 		nodeSchedulingMetadata, ok := nodesSchedulingMetadata[name]
 		if !ok || driverResources.GreaterThan(nodeSchedulingMetadata.AvailableResources) {
@@ -55,8 +72,12 @@ func SparkBinPack(
 		executorNodes, ok := distributeExecutors(
 			ctx, executorResources, executorCount, executorNodePriorityOrder, nodesSchedulingMetadata, reserved)
 		if ok {
-			return name, executorNodes, true
+			return &PackingResult{
+				driverNode:    name,
+				executorNodes: executorNodes,
+				hasCapacity:   true,
+			}
 		}
 	}
-	return "", nil, false
+	return emptyPackingResult()
 }

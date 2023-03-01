@@ -126,7 +126,7 @@ func TestTightlyPack(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			driver, executors, ok := TightlyPack(
+			p := TightlyPack(
 				context.Background(),
 				test.driverResources,
 				test.executorResources,
@@ -134,6 +134,7 @@ func TestTightlyPack(t *testing.T) {
 				test.nodePriorityOrder,
 				test.nodePriorityOrder,
 				test.nodesSchedulingMetadata)
+			driver, executors, ok := p.driverNode, p.executorNodes, p.hasCapacity
 			if ok != test.willFit {
 				t.Fatalf("mismatch in willFit, expected: %v, got: %v", test.willFit, ok)
 			}
