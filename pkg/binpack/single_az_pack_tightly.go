@@ -34,6 +34,8 @@ var SingleAZTightlyPack = SparkBinPackFunction(func(
 	driverZonesInOrder, driverNodePriorityOrderByZone := groupNodesByZone(driverNodePriorityOrder, nodesSchedulingMetadata)
 	_, executorNodePriorityOrderByZone := groupNodesByZone(executorNodePriorityOrder, nodesSchedulingMetadata)
 
+	packingResults := make([]*PackingResult, 0)
+
 	for _, zone := range driverZonesInOrder {
 		driverNodePriorityOrderForZone := driverNodePriorityOrderByZone[zone]
 		executorNodePriorityOrderForZone, ok := executorNodePriorityOrderByZone[zone]
@@ -41,11 +43,24 @@ var SingleAZTightlyPack = SparkBinPackFunction(func(
 			continue
 		}
 		packingResult := SparkBinPack(ctx, driverResources, executorResources, executorCount, driverNodePriorityOrderForZone, executorNodePriorityOrderForZone, nodesSchedulingMetadata, tightlyPackExecutors)
+		// consider all AZs
 		if packingResult.hasCapacity {
-			return packingResult
+			packingResults = append(packingResults, packingResult)
 		}
 	}
-	return emptyPackingResult()
+
+	if len(packingResults) == 0 {
+		return emptyPackingResult()
+	}
+
+	// choose the most efficient packing across AZs
+	bestResult := packingResults[0]
+	for _, result := range packingResults {
+		if bestResult.packingEfficiency.Less(result.packingEfficiency) {
+			bestResult = result
+		}
+	}
+	return bestResult
 })
 
 func groupNodesByZone(nodeNames []string, nodesSchedulingMetadata resources.NodeGroupSchedulingMetadata) ([]string, map[string][]string) {
