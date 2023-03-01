@@ -39,31 +39,28 @@ func (p *PackingEfficiency) Less(o PackingEfficiency) bool {
 	return pMaxEfficiency < oMaxEfficiency
 }
 
-// ComputePackingEfficiency calculates average utilization across provided nodes, given the new reservation.
-func ComputePackingEfficiency(
-	nodesSchedulingMetadata resources.NodeGroupSchedulingMetadata,
-	reservedResources resources.NodeGroupResources) PackingEfficiency {
+// ComputePackingEfficiencies calculates utilization for all provided nodes, given the new reservation.
+func ComputePackingEfficiencies(
+	nodeGroupSchedulingMetadata resources.NodeGroupSchedulingMetadata,
+	reservedResources resources.NodeGroupResources) (PackingEfficiency, []*PackingEfficiency) {
 
 	var cpuSum, gpuSum, memorySum float64
 	nodesWithGPU := 0
+	nodeEfficiencies := make([]*PackingEfficiency, 0)
 
-	for nodeName, nodesSchedulingMetadata := range nodesSchedulingMetadata {
-		nodeReservedResources := nodesSchedulingMetadata.AvailableResources.Copy()
-		if reserved, ok := reservedResources[nodeName]; ok {
-			nodeReservedResources.Add(reserved)
-		}
-		nodeSchedulableResources := nodesSchedulingMetadata.SchedulableResources
+	for nodeName, nodeSchedulingMetadata := range nodeGroupSchedulingMetadata {
+		nodeEfficiency := computePackingEfficiency(nodeName, *nodeSchedulingMetadata, reservedResources)
 
-		cpuSum += float64(nodeReservedResources.CPU.Value()) / float64(normalizeResource(nodeSchedulableResources.CPU.Value()))
-		memorySum += float64(nodeReservedResources.Memory.Value()) / float64(normalizeResource(nodeSchedulableResources.Memory.Value()))
-		// GPU treated differently because not every bin has GPU
-		if nodeSchedulableResources.NvidiaGPU.Value() != 0 {
-			gpuSum += float64(nodeSchedulableResources.NvidiaGPU.Value()) / float64(normalizeResource(nodeSchedulableResources.NvidiaGPU.Value()))
+		cpuSum += nodeEfficiency.CPU
+		memorySum += nodeEfficiency.Memory
+
+		if nodeSchedulingMetadata.SchedulableResources.NvidiaGPU.Value() != 0 {
+			gpuSum += nodeEfficiency.GPU
 			nodesWithGPU++
 		}
 	}
 
-	length := math.Max(float64(len(nodesSchedulingMetadata)), 1)
+	length := math.Max(float64(len(nodeGroupSchedulingMetadata)), 1)
 	var gpuEfficiency float64
 	if nodesWithGPU == 0 {
 		gpuEfficiency = 1
@@ -71,9 +68,36 @@ func ComputePackingEfficiency(
 		gpuEfficiency = gpuSum / float64(nodesWithGPU)
 	}
 
-	return PackingEfficiency{
+	avgEfficiency := PackingEfficiency{
 		CPU:    cpuSum / length,
 		Memory: memorySum / length,
+		GPU:    gpuEfficiency,
+	}
+
+	return avgEfficiency, nodeEfficiencies
+}
+
+func computePackingEfficiency(
+	nodeName string,
+	nodeSchedulingMetadata resources.NodeSchedulingMetadata,
+	reservedResources resources.NodeGroupResources) PackingEfficiency {
+
+	nodeReservedResources := nodeSchedulingMetadata.SchedulableResources.Copy()
+	nodeReservedResources.Sub(nodeSchedulingMetadata.AvailableResources)
+	if reserved, ok := reservedResources[nodeName]; ok {
+		nodeReservedResources.Add(reserved)
+	}
+	nodeSchedulableResources := nodeSchedulingMetadata.SchedulableResources
+
+	// GPU treated differently because not every node has GPU
+	gpuEfficiency := 0.0
+	if nodeSchedulableResources.NvidiaGPU.Value() != 0 {
+		gpuEfficiency = float64(nodeSchedulableResources.NvidiaGPU.Value()) / float64(normalizeResource(nodeSchedulableResources.NvidiaGPU.Value()))
+	}
+
+	return PackingEfficiency{
+		CPU:    float64(nodeReservedResources.CPU.Value()) / float64(normalizeResource(nodeSchedulableResources.CPU.Value())),
+		Memory: float64(nodeReservedResources.Memory.Value()) / float64(normalizeResource(nodeSchedulableResources.Memory.Value())),
 		GPU:    gpuEfficiency,
 	}
 }
