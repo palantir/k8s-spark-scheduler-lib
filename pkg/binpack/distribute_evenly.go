@@ -60,6 +60,7 @@ func distributeExecutorsEvenly(
 			if !ok || reservedResources[n].GreaterThan(nodeSchedulingMetadata.AvailableResources) {
 				// can not allocate a resource to this node
 				delete(availableNodes, n)
+				reservedResources[n].Sub(executorResources)
 			} else {
 				executorNodes = append(executorNodes, n)
 				if len(executorNodes) == executorCount {
