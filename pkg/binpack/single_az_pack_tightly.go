@@ -31,10 +31,11 @@ var SingleAZTightlyPack = SparkBinPackFunction(func(
 	driverNodePriorityOrder, executorNodePriorityOrder []string,
 	nodesSchedulingMetadata resources.NodeGroupSchedulingMetadata) (string, []string, bool) {
 
-	driverNodePriorityOrderByZone := groupNodesByZone(driverNodePriorityOrder, nodesSchedulingMetadata)
-	executorNodePriorityOrderByZone := groupNodesByZone(executorNodePriorityOrder, nodesSchedulingMetadata)
+	driverZonesInOrder, driverNodePriorityOrderByZone := groupNodesByZone(driverNodePriorityOrder, nodesSchedulingMetadata)
+	_, executorNodePriorityOrderByZone := groupNodesByZone(executorNodePriorityOrder, nodesSchedulingMetadata)
 
-	for zone, driverNodePriorityOrderForZone := range driverNodePriorityOrderByZone {
+	for _, zone := range driverZonesInOrder {
+		driverNodePriorityOrderForZone := driverNodePriorityOrderByZone[zone]
 		executorNodePriorityOrderForZone, ok := executorNodePriorityOrderByZone[zone]
 		if !ok {
 			continue
@@ -47,7 +48,8 @@ var SingleAZTightlyPack = SparkBinPackFunction(func(
 	return "", nil, false
 })
 
-func groupNodesByZone(nodeNames []string, nodesSchedulingMetadata resources.NodeGroupSchedulingMetadata) map[string][]string {
+func groupNodesByZone(nodeNames []string, nodesSchedulingMetadata resources.NodeGroupSchedulingMetadata) ([]string, map[string][]string) {
+	zonesInOrder := make([]string, 0)
 	nodeNamesByZone := make(map[string][]string)
 	for _, nodeName := range nodeNames {
 		nodesSchedulingMetadata, ok := nodesSchedulingMetadata[nodeName]
@@ -55,7 +57,10 @@ func groupNodesByZone(nodeNames []string, nodesSchedulingMetadata resources.Node
 			continue
 		}
 		zoneLabel := nodesSchedulingMetadata.ZoneLabel
+		if _, ok := nodeNamesByZone[zoneLabel]; !ok {
+			zonesInOrder = append(zonesInOrder, zoneLabel)
+		}
 		nodeNamesByZone[zoneLabel] = append(nodeNamesByZone[zoneLabel], nodeName)
 	}
-	return nodeNamesByZone
+	return zonesInOrder, nodeNamesByZone
 }
