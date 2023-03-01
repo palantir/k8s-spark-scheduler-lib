@@ -44,7 +44,7 @@ var SingleAZTightlyPack = SparkBinPackFunction(func(
 		}
 		packingResult := SparkBinPack(ctx, driverResources, executorResources, executorCount, driverNodePriorityOrderForZone, executorNodePriorityOrderForZone, nodesSchedulingMetadata, tightlyPackExecutors)
 		// consider all AZs
-		if packingResult.hasCapacity {
+		if packingResult.HasCapacity {
 			packingResults = append(packingResults, packingResult)
 		}
 	}
@@ -56,7 +56,7 @@ var SingleAZTightlyPack = SparkBinPackFunction(func(
 	// choose the most efficient packing across AZs
 	bestResult := packingResults[0]
 	for _, result := range packingResults {
-		if bestResult.packingEfficiency.Less(result.packingEfficiency) {
+		if bestResult.PackingEfficiency.Less(result.PackingEfficiency) {
 			bestResult = result
 		}
 	}

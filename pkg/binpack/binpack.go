@@ -23,17 +23,17 @@ import (
 // PackingResult is a result of one binpacking operation. When successful, assigns driver and
 // executors to nodes. Includes an overview of the resource assignment across nodes.
 type PackingResult struct {
-	driverNode        string
-	executorNodes     []string
-	packingEfficiency PackingEfficiency
-	hasCapacity       bool
+	DriverNode        string
+	ExecutorNodes     []string
+	PackingEfficiency PackingEfficiency
+	HasCapacity       bool
 }
 
 func emptyPackingResult() *PackingResult {
 	return &PackingResult{
-		driverNode:    "",
-		executorNodes: nil,
-		hasCapacity:   false,
+		DriverNode:    "",
+		ExecutorNodes: nil,
+		HasCapacity:   false,
 	}
 }
 
@@ -73,10 +73,10 @@ func SparkBinPack(
 			ctx, executorResources, executorCount, executorNodePriorityOrder, nodesSchedulingMetadata, reserved)
 		if ok {
 			return &PackingResult{
-				driverNode:        driverNode,
-				executorNodes:     executorNodes,
-				hasCapacity:       true,
-				packingEfficiency: ComputePackingEfficiency(nodesSchedulingMetadata, reserved),
+				DriverNode:        driverNode,
+				ExecutorNodes:     executorNodes,
+				HasCapacity:       true,
+				PackingEfficiency: ComputePackingEfficiency(nodesSchedulingMetadata, reserved),
 			}
 		}
 	}
