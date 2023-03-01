@@ -16,6 +16,7 @@ package binpack
 
 import (
 	"context"
+	"math"
 	"reflect"
 	"testing"
 
@@ -30,10 +31,23 @@ func createResources(cpu, memory, nvidiaGPU int64) *resources.Resources {
 		NvidiaGPU: *resource.NewQuantity(nvidiaGPU, resource.BinarySI),
 	}
 }
+
 func createSchedulingMetadata(cpu, memory, nvidiaGPU int64, zoneLabel string) *resources.NodeSchedulingMetadata {
 	return &resources.NodeSchedulingMetadata{
-		AvailableResources: createResources(cpu, memory, nvidiaGPU),
-		ZoneLabel:          zoneLabel,
+		AvailableResources:   createResources(cpu, memory, nvidiaGPU),
+		SchedulableResources: createResources(math.MaxInt64, math.MaxInt64, math.MaxInt64),
+		ZoneLabel:            zoneLabel,
+	}
+}
+
+func createSchedulingMetadataWithTotals(
+	cpu, cpuTotal, memory, memoryTotal, nvidiaGPU, nvidiaGPUTotal int64,
+	zoneLabel string) *resources.NodeSchedulingMetadata {
+
+	return &resources.NodeSchedulingMetadata{
+		AvailableResources:   createResources(cpu, memory, nvidiaGPU),
+		SchedulableResources: createResources(cpuTotal, memoryTotal, nvidiaGPUTotal),
+		ZoneLabel:            zoneLabel,
 	}
 }
 
