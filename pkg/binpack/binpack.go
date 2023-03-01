@@ -62,18 +62,18 @@ func SparkBinPack(
 	driverNodePriorityOrder, executorNodePriorityOrder []string,
 	nodesSchedulingMetadata resources.NodeGroupSchedulingMetadata,
 	distributeExecutors GenericBinPackFunction) *PackingResult {
-	for _, name := range driverNodePriorityOrder {
-		nodeSchedulingMetadata, ok := nodesSchedulingMetadata[name]
+	for _, driverNode := range driverNodePriorityOrder {
+		nodeSchedulingMetadata, ok := nodesSchedulingMetadata[driverNode]
 		if !ok || driverResources.GreaterThan(nodeSchedulingMetadata.AvailableResources) {
 			continue
 		}
 		reserved := make(resources.NodeGroupResources, len(nodesSchedulingMetadata))
-		reserved[name] = driverResources.Copy()
+		reserved[driverNode] = driverResources.Copy()
 		executorNodes, ok := distributeExecutors(
 			ctx, executorResources, executorCount, executorNodePriorityOrder, nodesSchedulingMetadata, reserved)
 		if ok {
 			return &PackingResult{
-				driverNode:    name,
+				driverNode:    driverNode,
 				executorNodes: executorNodes,
 				hasCapacity:   true,
 			}
