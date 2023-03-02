@@ -92,7 +92,7 @@ func computePackingEfficiency(
 	// GPU treated differently because not every node has GPU
 	gpuEfficiency := 0.0
 	if nodeSchedulableResources.NvidiaGPU.Value() != 0 {
-		gpuEfficiency = float64(nodeSchedulableResources.NvidiaGPU.Value()) / float64(normalizeResource(nodeSchedulableResources.NvidiaGPU.Value()))
+		gpuEfficiency = float64(nodeReservedResources.NvidiaGPU.Value()) / float64(normalizeResource(nodeSchedulableResources.NvidiaGPU.Value()))
 	}
 
 	return PackingEfficiency{

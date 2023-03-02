@@ -22,7 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-const CmpTolerance = 0.0000000001
+const CmpTolerance = 0.0001
 
 func TestSinglePackingEfficiency(t *testing.T) {
 	tests := []struct {
@@ -37,7 +37,7 @@ func TestSinglePackingEfficiency(t *testing.T) {
 		name:                     "packing efficiency calculated correctly for one node",
 		nodeName:                 "n1",
 		nodesSchedulingMetadata:  *createSchedulingMetadataWithTotals(6, 10, 8, 10, 1, 1, "zone1"),
-		reservedResources:        createReservedResources("n1", "1", "1", "1"),
+		reservedResources:        createNodeReservedResources("n1", "1", "1", "1"),
 		expectedCPUEfficiency:    0.5,
 		expectedMemoryEfficiency: 0.3,
 		expectedGPUEfficiency:    1.0,
@@ -66,12 +66,80 @@ func TestSinglePackingEfficiency(t *testing.T) {
 	}
 }
 
-func createReservedResources(nodeName, cpu, memory, gpu string) resources.NodeGroupResources {
+func createNodeReservedResources(nodeName, cpu, memory, gpu string) resources.NodeGroupResources {
 	reserved := make(resources.NodeGroupResources)
-	reserved[nodeName] = &resources.Resources{
+	reserved[nodeName] = createNodeResources(cpu, memory, gpu)
+	return reserved
+}
+
+func createNodeResources(cpu, memory, gpu string) *resources.Resources {
+	return &resources.Resources{
 		CPU:       resource.MustParse(cpu),
 		Memory:    resource.MustParse(memory),
 		NvidiaGPU: resource.MustParse(gpu),
 	}
+}
+
+func TestMultiPackingEfficiency(t *testing.T) {
+	tests := []struct {
+		name                         string
+		nodesGroupSchedulingMetadata resources.NodeGroupSchedulingMetadata
+		reservedResources            resources.NodeGroupResources
+		expectedCPUEfficiency        float64
+		expectedMemoryEfficiency     float64
+		expectedGPUEfficiency        float64
+	}{{
+		name: "packing efficiency calculated correctly for multiple nodes",
+		nodesGroupSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
+			"n1": createSchedulingMetadataWithTotals(10, 10, 10, 10, 2, 2, "zone1"),
+			"n2": createSchedulingMetadataWithTotals(10, 10, 10, 10, 0, 0, "zone1"),
+			"n3": createSchedulingMetadataWithTotals(10, 10, 10, 10, 2, 2, "zone1"),
+		}),
+		reservedResources: createReservedResources(
+			[]string{"n1", "n2", "n3"},
+			[]*resources.Resources{
+				createNodeResources("5", "5", "2"),
+				createNodeResources("2", "7", "0"),
+				createNodeResources("9", "2", "1"),
+			}),
+		/*
+			cpu: 0.5 0.2 0.9 -> 0.53
+			mem: 0.5 0.7 0.2 -> 0.46
+			gpu: 1.0 0.0 0.5 -> 0.75
+		*/
+		expectedCPUEfficiency:    0.533333,
+		expectedMemoryEfficiency: 0.466666,
+		expectedGPUEfficiency:    0.75,
+	},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			avgEfficiency, _ := ComputePackingEfficiencies(
+				test.nodesGroupSchedulingMetadata,
+				test.reservedResources)
+
+			if math.Abs(test.expectedCPUEfficiency-avgEfficiency.CPU) > CmpTolerance {
+				t.Fatalf("mismatch in expectedCPUEfficiency, expected: %v, got: %v", test.expectedCPUEfficiency, avgEfficiency.CPU)
+			}
+
+			if math.Abs(test.expectedMemoryEfficiency-avgEfficiency.Memory) > CmpTolerance {
+				t.Fatalf("mismatch in expectedMemoryEfficiency, expected: %v, got: %v", test.expectedMemoryEfficiency, avgEfficiency.Memory)
+			}
+
+			if math.Abs(test.expectedGPUEfficiency-avgEfficiency.GPU) > CmpTolerance {
+				t.Fatalf("mismatch in expectedGPUEfficiency, expected: %v, got: %v", test.expectedGPUEfficiency, avgEfficiency.GPU)
+			}
+		})
+	}
+}
+
+func createReservedResources(nodeNames []string, nodeResources []*resources.Resources) resources.NodeGroupResources {
+	reserved := make(resources.NodeGroupResources)
+
+	for i, nodeName := range nodeNames {
+		reserved[nodeName] = nodeResources[i]
+	}
+
 	return reserved
 }
