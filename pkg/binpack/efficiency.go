@@ -23,9 +23,10 @@ import (
 // PackingEfficiency represents result packing efficiency per resource type. Computed as the total
 // resources used divided by total capacity.
 type PackingEfficiency struct {
-	CPU    float64
-	Memory float64
-	GPU    float64
+	NodeName string
+	CPU      float64
+	Memory   float64
+	GPU      float64
 }
 
 // LessThan compares two packing efficiencies. For a single packing we take the highest of the
@@ -96,9 +97,10 @@ func computePackingEfficiency(
 	}
 
 	return PackingEfficiency{
-		CPU:    float64(nodeReservedResources.CPU.Value()) / float64(normalizeResource(nodeSchedulableResources.CPU.Value())),
-		Memory: float64(nodeReservedResources.Memory.Value()) / float64(normalizeResource(nodeSchedulableResources.Memory.Value())),
-		GPU:    gpuEfficiency,
+		NodeName: nodeName,
+		CPU:      float64(nodeReservedResources.CPU.Value()) / float64(normalizeResource(nodeSchedulableResources.CPU.Value())),
+		Memory:   float64(nodeReservedResources.Memory.Value()) / float64(normalizeResource(nodeSchedulableResources.Memory.Value())),
+		GPU:      gpuEfficiency,
 	}
 }
 
