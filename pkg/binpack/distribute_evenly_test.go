@@ -41,11 +41,11 @@ func createSchedulingMetadata(cpu, memory, nvidiaGPU int64, zoneLabel string) *r
 }
 
 func createSchedulingMetadataWithTotals(
-	cpu, cpuTotal, memory, memoryTotal, nvidiaGPU, nvidiaGPUTotal int64,
+	availableCPU, cpuTotal, availableMemory, memoryTotal, availableNvidiaGPU, nvidiaGPUTotal int64,
 	zoneLabel string) *resources.NodeSchedulingMetadata {
 
 	return &resources.NodeSchedulingMetadata{
-		AvailableResources:   createResources(cpu, memory, nvidiaGPU),
+		AvailableResources:   createResources(availableCPU, availableMemory, availableNvidiaGPU),
 		SchedulableResources: createResources(cpuTotal, memoryTotal, nvidiaGPUTotal),
 		ZoneLabel:            zoneLabel,
 	}

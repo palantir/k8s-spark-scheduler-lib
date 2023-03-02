@@ -28,11 +28,11 @@ type PackingEfficiency struct {
 	GPU    float64
 }
 
-// Less compares two packing efficiencies. For a single packing we take the highest of the
+// LessThan compares two packing efficiencies. For a single packing we take the highest of the
 // resources' efficiency. For example, when CPU is at 0.81 and Memory is at 0.54 the avg efficiency
 // is 0.81. One packing efficiency is deemed less efficient when its avg efficiency is lower than
 // the other's packing efficiency.
-func (p *PackingEfficiency) Less(o PackingEfficiency) bool {
+func (p *PackingEfficiency) LessThan(o PackingEfficiency) bool {
 	// TODO: GPU is explicitly excluded for now but worthwhile to reconsider in future
 	pMaxEfficiency := math.Max(p.CPU, p.Memory)
 	oMaxEfficiency := math.Max(o.CPU, o.Memory)

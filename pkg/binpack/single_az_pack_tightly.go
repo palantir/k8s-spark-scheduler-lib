@@ -56,7 +56,7 @@ var SingleAZTightlyPack = SparkBinPackFunction(func(
 	// choose the most efficient packing across AZs
 	bestResult := packingResults[0]
 	for _, result := range packingResults {
-		if bestResult.AvgPackingEfficiency.Less(result.AvgPackingEfficiency) {
+		if bestResult.AvgPackingEfficiency.LessThan(result.AvgPackingEfficiency) {
 			bestResult = result
 		}
 	}
