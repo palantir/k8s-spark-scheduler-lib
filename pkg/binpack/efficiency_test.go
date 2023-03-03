@@ -51,7 +51,7 @@ func TestSinglePackingEfficiency(t *testing.T) {
 				test.nodesSchedulingMetadata,
 				test.reservedResources)
 
-			expectedMaxEfficiency := math.Max(test.expectedGPUEfficiency, math.Max(test.expectedCPUEfficiency, test.expectedMemoryEfficiency))
+			expectedMax := math.Max(test.expectedGPUEfficiency, math.Max(test.expectedCPUEfficiency, test.expectedMemoryEfficiency))
 
 			if math.Abs(test.expectedCPUEfficiency-p.CPU) > CmpTolerance {
 				t.Fatalf("mismatch in expectedCPUEfficiency, expected: %v, got: %v", test.expectedCPUEfficiency, p.CPU)
@@ -65,8 +65,8 @@ func TestSinglePackingEfficiency(t *testing.T) {
 				t.Fatalf("mismatch in expectedGPUEfficiency, expected: %v, got: %v", test.expectedGPUEfficiency, p.GPU)
 			}
 
-			if math.Abs(expectedMaxEfficiency-p.MaxAllResources()) > CmpTolerance {
-				t.Fatalf("mismatch in expectedMaxEfficiency, expected: %v, got: %v", expectedMaxEfficiency, p.MaxAllResources())
+			if math.Abs(expectedMax-p.Max()) > CmpTolerance {
+				t.Fatalf("mismatch in expectedMaxEfficiency, expected: %v, got: %v", expectedMax, p.Max())
 			}
 		})
 	}
@@ -133,18 +133,17 @@ func TestMultiPackingEfficiency(t *testing.T) {
 		/*
 			cpu: 0.5 0.2 0.9 -> 0.53
 			mem: 0.5 0.7 0.2 -> 0.46
-			gpu: 0.0 0.0 0.0 -> 1.00
+			gpu: 0.0 0.0 0.0 -> 0.00
 		*/
 		expectedCPUEfficiency:    0.533333,
 		expectedMemoryEfficiency: 0.466666,
-		expectedGPUEfficiency:    1.0,
+		expectedGPUEfficiency:    0.0,
 	},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			expectedMaxRequired := math.Max(test.expectedCPUEfficiency, test.expectedMemoryEfficiency)
-			expectedMaxAll := math.Max(test.expectedGPUEfficiency, expectedMaxRequired)
+			expectedMax := math.Max(test.expectedGPUEfficiency, math.Max(test.expectedCPUEfficiency, test.expectedMemoryEfficiency))
 
 			efficiencies := ComputePackingEfficiencies(
 				test.nodesGroupSchedulingMetadata,
@@ -163,12 +162,8 @@ func TestMultiPackingEfficiency(t *testing.T) {
 				t.Fatalf("mismatch in expectedGPUEfficiency, expected: %v, got: %v", test.expectedGPUEfficiency, avgEfficiency.GPU)
 			}
 
-			if math.Abs(expectedMaxRequired-avgEfficiency.Max()) > CmpTolerance {
-				t.Fatalf("mismatch in expectedMaxRequired, expected: %v, got: %v", expectedMaxRequired, avgEfficiency.Max())
-			}
-
-			if math.Abs(expectedMaxAll-avgEfficiency.MaxAllResources()) > CmpTolerance {
-				t.Fatalf("mismatch in expectedMaxAll, expected: %v, got: %v", expectedMaxAll, avgEfficiency.MaxAllResources())
+			if math.Abs(expectedMax-avgEfficiency.Max()) > CmpTolerance {
+				t.Fatalf("mismatch in expectedMax, expected: %v, got: %v", expectedMax, avgEfficiency.Max())
 			}
 		})
 	}
