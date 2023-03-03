@@ -28,17 +28,29 @@ type AvgPackingEfficiency struct {
 	GPU    float64
 }
 
-// Max returns the highest packing efficiency of all resource types.
+// MaxAllResources returns the highest packing efficiency of all resource types.
+func (p *AvgPackingEfficiency) MaxAllResources() float64 {
+	return math.Max(p.GPU, p.Max())
+}
+
+// Max returns the highest packing efficiency of all required resource types. CPU and Memory
+// are always present. GPU, not so much.
 func (p *AvgPackingEfficiency) Max() float64 {
-	return math.Max(p.GPU, math.Max(p.CPU, p.Memory))
+	return math.Max(p.CPU, p.Memory)
 }
 
 // LessThan compares two average packing efficiencies. For a single packing we take the highest of the
 // resources' efficiency. For example, when CPU is at 0.81 and Memory is at 0.54 the avg efficiency
 // is 0.81. One packing efficiency is deemed less efficient when its avg efficiency is lower than
-// the other's packing efficiency.
+// the other's packing efficiency. This function focuses on non-optional resources. For example, GPU
+// is an optional resource type and is ignored here.
 func (p *AvgPackingEfficiency) LessThan(o AvgPackingEfficiency) bool {
 	return p.Max() < o.Max()
+}
+
+// LessThanAllResources is just like LessThan() but considers optional resources types, such as GPU.
+func (p *AvgPackingEfficiency) LessThanAllResources(o AvgPackingEfficiency) bool {
+	return p.MaxAllResources() < o.MaxAllResources()
 }
 
 // EmptyAvgPackingEfficiency returns a representation of a failed bin packing. Each individual resource
@@ -58,6 +70,18 @@ type PackingEfficiency struct {
 	CPU      float64
 	Memory   float64
 	GPU      float64
+}
+
+// MaxAllResources returns the highest packing efficiency of all resource types, including the optional ones,
+// such as GPU.
+func (p *PackingEfficiency) MaxAllResources() float64 {
+	return math.Max(p.GPU, p.Max())
+}
+
+// Max returns the highest packing efficiency of all required resource types. CPU and Memory
+// are always present. GPU, not so much.
+func (p *PackingEfficiency) Max() float64 {
+	return math.Max(p.CPU, p.Memory)
 }
 
 // ComputePackingEfficiencies calculates utilization for all provided nodes, given the new reservation.

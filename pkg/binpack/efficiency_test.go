@@ -51,6 +51,8 @@ func TestSinglePackingEfficiency(t *testing.T) {
 				test.nodesSchedulingMetadata,
 				test.reservedResources)
 
+			expectedMaxEfficiency := math.Max(test.expectedGPUEfficiency, math.Max(test.expectedCPUEfficiency, test.expectedMemoryEfficiency))
+
 			if math.Abs(test.expectedCPUEfficiency-p.CPU) > CmpTolerance {
 				t.Fatalf("mismatch in expectedCPUEfficiency, expected: %v, got: %v", test.expectedCPUEfficiency, p.CPU)
 			}
@@ -61,6 +63,10 @@ func TestSinglePackingEfficiency(t *testing.T) {
 
 			if math.Abs(test.expectedGPUEfficiency-p.GPU) > CmpTolerance {
 				t.Fatalf("mismatch in expectedGPUEfficiency, expected: %v, got: %v", test.expectedGPUEfficiency, p.GPU)
+			}
+
+			if math.Abs(expectedMaxEfficiency-p.MaxAllResources()) > CmpTolerance {
+				t.Fatalf("mismatch in expectedMaxEfficiency, expected: %v, got: %v", expectedMaxEfficiency, p.MaxAllResources())
 			}
 		})
 	}
@@ -110,15 +116,39 @@ func TestMultiPackingEfficiency(t *testing.T) {
 		expectedCPUEfficiency:    0.533333,
 		expectedMemoryEfficiency: 0.466666,
 		expectedGPUEfficiency:    0.75,
+	}, {
+		name: "packing efficiency calculated correctly when there are no gpus",
+		nodesGroupSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
+			"n1": createSchedulingMetadataWithTotals(10, 10, 10, 10, 0, 0, "zone1"),
+			"n2": createSchedulingMetadataWithTotals(10, 10, 10, 10, 0, 0, "zone1"),
+			"n3": createSchedulingMetadataWithTotals(10, 10, 10, 10, 0, 0, "zone1"),
+		}),
+		reservedResources: createReservedResources(
+			[]string{"n1", "n2", "n3"},
+			[]*resources.Resources{
+				createNodeResources("5", "5", "0"),
+				createNodeResources("2", "7", "0"),
+				createNodeResources("9", "2", "0"),
+			}),
+		/*
+			cpu: 0.5 0.2 0.9 -> 0.53
+			mem: 0.5 0.7 0.2 -> 0.46
+			gpu: 0.0 0.0 0.0 -> 1.00
+		*/
+		expectedCPUEfficiency:    0.533333,
+		expectedMemoryEfficiency: 0.466666,
+		expectedGPUEfficiency:    1.0,
 	},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			expectedMaxRequired := math.Max(test.expectedCPUEfficiency, test.expectedMemoryEfficiency)
+			expectedMaxAll := math.Max(test.expectedGPUEfficiency, expectedMaxRequired)
+
 			efficiencies := ComputePackingEfficiencies(
 				test.nodesGroupSchedulingMetadata,
 				test.reservedResources)
-
 			avgEfficiency := ComputeAvgPackingEfficiency(test.nodesGroupSchedulingMetadata, efficiencies)
 
 			if math.Abs(test.expectedCPUEfficiency-avgEfficiency.CPU) > CmpTolerance {
@@ -131,6 +161,14 @@ func TestMultiPackingEfficiency(t *testing.T) {
 
 			if math.Abs(test.expectedGPUEfficiency-avgEfficiency.GPU) > CmpTolerance {
 				t.Fatalf("mismatch in expectedGPUEfficiency, expected: %v, got: %v", test.expectedGPUEfficiency, avgEfficiency.GPU)
+			}
+
+			if math.Abs(expectedMaxRequired-avgEfficiency.Max()) > CmpTolerance {
+				t.Fatalf("mismatch in expectedMaxRequired, expected: %v, got: %v", expectedMaxRequired, avgEfficiency.Max())
+			}
+
+			if math.Abs(expectedMaxAll-avgEfficiency.MaxAllResources()) > CmpTolerance {
+				t.Fatalf("mismatch in expectedMaxAll, expected: %v, got: %v", expectedMaxAll, avgEfficiency.MaxAllResources())
 			}
 		})
 	}
