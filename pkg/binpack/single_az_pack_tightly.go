@@ -29,10 +29,10 @@ var SingleAZTightlyPack = SparkBinPackFunction(func(
 	driverResources, executorResources *resources.Resources,
 	executorCount int,
 	driverNodePriorityOrder, executorNodePriorityOrder []string,
-	nodesSchedulingMetadata resources.NodeGroupSchedulingMetadata) *PackingResult {
+	nodeGroupSchedulingMetadata resources.NodeGroupSchedulingMetadata) *PackingResult {
 
-	driverZonesInOrder, driverNodePriorityOrderByZone := groupNodesByZone(driverNodePriorityOrder, nodesSchedulingMetadata)
-	_, executorNodePriorityOrderByZone := groupNodesByZone(executorNodePriorityOrder, nodesSchedulingMetadata)
+	driverZonesInOrder, driverNodePriorityOrderByZone := groupNodesByZone(driverNodePriorityOrder, nodeGroupSchedulingMetadata)
+	_, executorNodePriorityOrderByZone := groupNodesByZone(executorNodePriorityOrder, nodeGroupSchedulingMetadata)
 
 	packingResults := make([]*PackingResult, 0)
 
@@ -42,7 +42,7 @@ var SingleAZTightlyPack = SparkBinPackFunction(func(
 		if !ok {
 			continue
 		}
-		packingResult := SparkBinPack(ctx, driverResources, executorResources, executorCount, driverNodePriorityOrderForZone, executorNodePriorityOrderForZone, nodesSchedulingMetadata, tightlyPackExecutors)
+		packingResult := SparkBinPack(ctx, driverResources, executorResources, executorCount, driverNodePriorityOrderForZone, executorNodePriorityOrderForZone, nodeGroupSchedulingMetadata, tightlyPackExecutors)
 		// consider all AZs
 		if packingResult.HasCapacity {
 			packingResults = append(packingResults, packingResult)
@@ -50,17 +50,10 @@ var SingleAZTightlyPack = SparkBinPackFunction(func(
 	}
 
 	if len(packingResults) == 0 {
-		return emptyPackingResult()
+		return EmptyPackingResult()
 	}
 
-	// choose the most efficient packing across AZs
-	bestResult := packingResults[0]
-	for _, result := range packingResults {
-		if bestResult.AvgPackingEfficiency.LessThan(result.AvgPackingEfficiency) {
-			bestResult = result
-		}
-	}
-	return bestResult
+	return chooseBestResult(nodeGroupSchedulingMetadata, packingResults)
 })
 
 func groupNodesByZone(nodeNames []string, nodesSchedulingMetadata resources.NodeGroupSchedulingMetadata) ([]string, map[string][]string) {
@@ -78,4 +71,29 @@ func groupNodesByZone(nodeNames []string, nodesSchedulingMetadata resources.Node
 		nodeNamesByZone[zoneLabel] = append(nodeNamesByZone[zoneLabel], nodeName)
 	}
 	return zonesInOrder, nodeNamesByZone
+}
+
+// Chooses the result with the highest avg packing efficiency for the nodes we're scheduling onto.
+func chooseBestResult(
+	nodeGroupSchedulingMetadata resources.NodeGroupSchedulingMetadata,
+	results []*PackingResult) *PackingResult {
+
+	bestResult := EmptyPackingResult()
+	bestAvgPackingEfficiency := WorstAvgPackingEfficiency()
+
+	for _, result := range results {
+		nodeNames := append([]string{result.DriverNode}, result.ExecutorNodes...)
+		nodePackingEfficiencies := make([]*PackingEfficiency, 0)
+		for _, nodeName := range nodeNames {
+			nodePackingEfficiency := result.PackingEfficiencies[nodeName]
+			nodePackingEfficiencies = append(nodePackingEfficiencies, nodePackingEfficiency)
+		}
+		avgPackingEfficiency := ComputeAvgPackingEfficiency(nodeGroupSchedulingMetadata, nodePackingEfficiencies)
+		if bestAvgPackingEfficiency.LessThan(avgPackingEfficiency) {
+			bestResult = result
+			bestAvgPackingEfficiency = avgPackingEfficiency
+		}
+	}
+
+	return bestResult
 }

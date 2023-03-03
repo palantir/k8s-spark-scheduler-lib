@@ -37,13 +37,14 @@ func (p *AvgPackingEfficiency) LessThan(o AvgPackingEfficiency) bool {
 	return p.Max < o.Max
 }
 
-// EmptyAvgPackingEfficiency returns a representation of a failed bin packing. Each individual resource
+// WorstAvgPackingEfficiency returns a representation of a failed bin packing. Each individual resource
 // type is at worst possible (zero) packing efficiency.
-func EmptyAvgPackingEfficiency() AvgPackingEfficiency {
+func WorstAvgPackingEfficiency() AvgPackingEfficiency {
 	return AvgPackingEfficiency{
 		CPU:    0.0,
 		Memory: 0.0,
 		GPU:    0.0,
+		Max:    0.0,
 	}
 }
 
@@ -64,12 +65,12 @@ func (p *PackingEfficiency) Max() float64 {
 // ComputePackingEfficiencies calculates utilization for all provided nodes, given the new reservation.
 func ComputePackingEfficiencies(
 	nodeGroupSchedulingMetadata resources.NodeGroupSchedulingMetadata,
-	reservedResources resources.NodeGroupResources) []*PackingEfficiency {
+	reservedResources resources.NodeGroupResources) map[string]*PackingEfficiency {
 
-	nodeEfficiencies := make([]*PackingEfficiency, 0)
+	nodeEfficiencies := make(map[string]*PackingEfficiency, 0)
 
 	for nodeName, nodeSchedulingMetadata := range nodeGroupSchedulingMetadata {
-		nodeEfficiencies = append(nodeEfficiencies, computePackingEfficiency(nodeName, *nodeSchedulingMetadata, reservedResources))
+		nodeEfficiencies[nodeName] = computePackingEfficiency(nodeName, *nodeSchedulingMetadata, reservedResources)
 	}
 
 	return nodeEfficiencies
@@ -113,6 +114,10 @@ func normalizeResource(resourceValue int64) int64 {
 func ComputeAvgPackingEfficiency(
 	nodeGroupSchedulingMetadata resources.NodeGroupSchedulingMetadata,
 	packingEfficiencies []*PackingEfficiency) AvgPackingEfficiency {
+
+	if len(packingEfficiencies) == 0 {
+		return WorstAvgPackingEfficiency()
+	}
 
 	var cpuSum, gpuSum, memorySum, maxSum float64
 	nodesWithGPU := 0

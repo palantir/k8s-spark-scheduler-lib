@@ -148,9 +148,13 @@ func TestMultiPackingEfficiency(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			efficiencies := ComputePackingEfficiencies(
+			efficienciesByNodeName := ComputePackingEfficiencies(
 				test.nodesGroupSchedulingMetadata,
 				test.reservedResources)
+			efficiencies := make([]*PackingEfficiency, 0)
+			for _, efficiency := range efficienciesByNodeName {
+				efficiencies = append(efficiencies, efficiency)
+			}
 			avgEfficiency := ComputeAvgPackingEfficiency(test.nodesGroupSchedulingMetadata, efficiencies)
 
 			if math.Abs(test.expectedCPUEfficiency-avgEfficiency.CPU) > CmpTolerance {

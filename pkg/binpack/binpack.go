@@ -23,20 +23,19 @@ import (
 // PackingResult is a result of one binpacking operation. When successful, assigns driver and
 // executors to nodes. Includes an overview of the resource assignment across nodes.
 type PackingResult struct {
-	DriverNode           string
-	ExecutorNodes        []string
-	AvgPackingEfficiency AvgPackingEfficiency
-	PackingEfficiencies  []*PackingEfficiency
-	HasCapacity          bool
+	DriverNode          string
+	ExecutorNodes       []string
+	PackingEfficiencies map[string]*PackingEfficiency
+	HasCapacity         bool
 }
 
-func emptyPackingResult() *PackingResult {
+// EmptyPackingResult returns a representation of the worst possible packing result.
+func EmptyPackingResult() *PackingResult {
 	return &PackingResult{
-		DriverNode:           "",
-		ExecutorNodes:        make([]string, 0),
-		HasCapacity:          false,
-		AvgPackingEfficiency: EmptyAvgPackingEfficiency(),
-		PackingEfficiencies:  make([]*PackingEfficiency, 0),
+		DriverNode:          "",
+		ExecutorNodes:       make([]string, 0),
+		HasCapacity:         false,
+		PackingEfficiencies: make(map[string]*PackingEfficiency, 0),
 	}
 }
 
@@ -76,15 +75,13 @@ func SparkBinPack(
 			ctx, executorResources, executorCount, executorNodePriorityOrder, nodesSchedulingMetadata, reserved)
 		if ok {
 			packingEfficiencies := ComputePackingEfficiencies(nodesSchedulingMetadata, reserved)
-			avgPackingEfficiency := ComputeAvgPackingEfficiency(nodesSchedulingMetadata, packingEfficiencies)
 			return &PackingResult{
-				DriverNode:           driverNodeName,
-				ExecutorNodes:        executorNodes,
-				HasCapacity:          true,
-				AvgPackingEfficiency: avgPackingEfficiency,
-				PackingEfficiencies:  packingEfficiencies,
+				DriverNode:          driverNodeName,
+				ExecutorNodes:       executorNodes,
+				HasCapacity:         true,
+				PackingEfficiencies: packingEfficiencies,
 			}
 		}
 	}
-	return emptyPackingResult()
+	return EmptyPackingResult()
 }

@@ -32,7 +32,7 @@ func TestSingleAZTightlyPack(t *testing.T) {
 		nodePriorityOrder       []string
 		expectedDriverNode      string
 		willFit                 bool
-		expectedCounts          map[string]int
+		expectedExecutorCounts  map[string]int
 	}{{
 		name:              "picks the first zone when application fits entirely in either of the zones",
 		driverResources:   createResources(1, 3, 1),
@@ -44,10 +44,10 @@ func TestSingleAZTightlyPack(t *testing.T) {
 			"n2_z1": createSchedulingMetadata(6, 15, 6, "z1"),
 			"n2_z2": createSchedulingMetadata(6, 20, 6, "z2"),
 		}),
-		nodePriorityOrder:  []string{"n1_z1", "n1_z2", "n2_z1", "n2_z2"},
-		expectedDriverNode: "n1_z1",
-		willFit:            true,
-		expectedCounts:     map[string]int{"n2_z1": 2},
+		nodePriorityOrder:      []string{"n1_z1", "n1_z2", "n2_z1", "n2_z2"},
+		expectedDriverNode:     "n1_z1",
+		willFit:                true,
+		expectedExecutorCounts: map[string]int{"n2_z1": 2},
 	}, {
 		name:              "picks the zone where application fits entirely",
 		driverResources:   createResources(1, 3, 1),
@@ -58,10 +58,10 @@ func TestSingleAZTightlyPack(t *testing.T) {
 			"n1_z2": createSchedulingMetadata(4, 8, 2, "z2"),
 			"n2_z2": createSchedulingMetadata(6, 20, 10, "z2"),
 		}),
-		nodePriorityOrder:  []string{"n1_z1", "n1_z2", "n2_z2"},
-		expectedDriverNode: "n1_z2",
-		willFit:            true,
-		expectedCounts:     map[string]int{"n1_z2": 1, "n2_z2": 1},
+		nodePriorityOrder:      []string{"n1_z1", "n1_z2", "n2_z2"},
+		expectedDriverNode:     "n1_z2",
+		willFit:                true,
+		expectedExecutorCounts: map[string]int{"n1_z2": 1, "n2_z2": 1},
 	}, {
 		name:              "Does not schedule if application does not fit entirely in one zone",
 		driverResources:   createResources(1, 1, 1),
@@ -88,6 +88,23 @@ func TestSingleAZTightlyPack(t *testing.T) {
 		nodePriorityOrder:  []string{"n1_z1", "n1_z2"},
 		expectedDriverNode: "n1_z1",
 		willFit:            false,
+	}, {
+		name:              "prefer a result with better packing for selected nodes",
+		driverResources:   createResources(1, 0, 0),
+		executorResources: createResources(0, 0, 0),
+		numExecutors:      0,
+		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
+			"n1_z1": createSchedulingMetadataWithTotals(0, 10, 0, 0, 0, 0, "z1"),
+			"n2_z1": createSchedulingMetadataWithTotals(0, 10, 0, 0, 0, 0, "z1"),
+			"n3_z1": createSchedulingMetadataWithTotals(10, 10, 0, 0, 0, 0, "z1"),
+			"n1_z2": createSchedulingMetadataWithTotals(9, 10, 0, 0, 0, 0, "z2"),
+			"n2_z2": createSchedulingMetadataWithTotals(10, 10, 0, 0, 0, 0, "z2"),
+			"n3_z2": createSchedulingMetadataWithTotals(10, 10, 0, 0, 0, 0, "z2"),
+		}),
+		nodePriorityOrder:      []string{"n1_z1", "n2_z1", "n3_z1", "n1_z2", "n2_z2", "n3_z2"},
+		expectedDriverNode:     "n1_z2",
+		willFit:                true,
+		expectedExecutorCounts: map[string]int{},
 	},
 	}
 
@@ -115,8 +132,8 @@ func TestSingleAZTightlyPack(t *testing.T) {
 			for _, node := range executors {
 				resultCounts[node]++
 			}
-			if test.expectedCounts != nil && !reflect.DeepEqual(resultCounts, test.expectedCounts) {
-				t.Fatalf("executor nodes are not equal, expected: %v, got: %v", test.expectedCounts, resultCounts)
+			if test.expectedExecutorCounts != nil && !reflect.DeepEqual(resultCounts, test.expectedExecutorCounts) {
+				t.Fatalf("executor nodes are not equal, expected: %v, got: %v", test.expectedExecutorCounts, resultCounts)
 			}
 		})
 	}
