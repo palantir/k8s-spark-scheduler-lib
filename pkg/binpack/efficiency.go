@@ -20,8 +20,39 @@ import (
 	"github.com/palantir/k8s-spark-scheduler-lib/pkg/resources"
 )
 
-// PackingEfficiency represents result packing efficiency per resource type. Computed as the total
-// resources used divided by total capacity.
+// AvgPackingEfficiency represents result packing efficiency per resource type for the entire cluster.
+// Computed as average packing efficiency over all node efficiencies.
+type AvgPackingEfficiency struct {
+	CPU    float64
+	Memory float64
+	GPU    float64
+}
+
+// Max returns the highest packing efficiency of all resource types.
+func (p *AvgPackingEfficiency) Max() float64 {
+	return math.Max(p.GPU, math.Max(p.CPU, p.Memory))
+}
+
+// LessThan compares two average packing efficiencies. For a single packing we take the highest of the
+// resources' efficiency. For example, when CPU is at 0.81 and Memory is at 0.54 the avg efficiency
+// is 0.81. One packing efficiency is deemed less efficient when its avg efficiency is lower than
+// the other's packing efficiency.
+func (p *AvgPackingEfficiency) LessThan(o AvgPackingEfficiency) bool {
+	return p.Max() < o.Max()
+}
+
+// EmptyAvgPackingEfficiency returns a representation of a failed bin packing. Each individual resource
+// type is at worst possible (zero) packing efficiency.
+func EmptyAvgPackingEfficiency() AvgPackingEfficiency {
+	return AvgPackingEfficiency{
+		CPU:    0.0,
+		Memory: 0.0,
+		GPU:    0.0,
+	}
+}
+
+// PackingEfficiency represents result packing efficiency per resource type for one node. Computed
+// as the total resources used divided by total capacity.
 type PackingEfficiency struct {
 	NodeName string
 	CPU      float64
@@ -29,59 +60,24 @@ type PackingEfficiency struct {
 	GPU      float64
 }
 
-// LessThan compares two packing efficiencies. For a single packing we take the highest of the
-// resources' efficiency. For example, when CPU is at 0.81 and Memory is at 0.54 the avg efficiency
-// is 0.81. One packing efficiency is deemed less efficient when its avg efficiency is lower than
-// the other's packing efficiency.
-func (p *PackingEfficiency) LessThan(o PackingEfficiency) bool {
-	// TODO: GPU is explicitly excluded for now but worthwhile to reconsider in future
-	pMaxEfficiency := math.Max(p.CPU, p.Memory)
-	oMaxEfficiency := math.Max(o.CPU, o.Memory)
-	return pMaxEfficiency < oMaxEfficiency
-}
-
 // ComputePackingEfficiencies calculates utilization for all provided nodes, given the new reservation.
 func ComputePackingEfficiencies(
 	nodeGroupSchedulingMetadata resources.NodeGroupSchedulingMetadata,
-	reservedResources resources.NodeGroupResources) (PackingEfficiency, []*PackingEfficiency) {
+	reservedResources resources.NodeGroupResources) []*PackingEfficiency {
 
-	var cpuSum, gpuSum, memorySum float64
-	nodesWithGPU := 0
 	nodeEfficiencies := make([]*PackingEfficiency, 0)
 
 	for nodeName, nodeSchedulingMetadata := range nodeGroupSchedulingMetadata {
-		nodeEfficiency := computePackingEfficiency(nodeName, *nodeSchedulingMetadata, reservedResources)
-
-		cpuSum += nodeEfficiency.CPU
-		memorySum += nodeEfficiency.Memory
-
-		if nodeSchedulingMetadata.SchedulableResources.NvidiaGPU.Value() != 0 {
-			gpuSum += nodeEfficiency.GPU
-			nodesWithGPU++
-		}
+		nodeEfficiencies = append(nodeEfficiencies, computePackingEfficiency(nodeName, *nodeSchedulingMetadata, reservedResources))
 	}
 
-	length := math.Max(float64(len(nodeGroupSchedulingMetadata)), 1)
-	var gpuEfficiency float64
-	if nodesWithGPU == 0 {
-		gpuEfficiency = 1
-	} else {
-		gpuEfficiency = gpuSum / float64(nodesWithGPU)
-	}
-
-	avgEfficiency := PackingEfficiency{
-		CPU:    cpuSum / length,
-		Memory: memorySum / length,
-		GPU:    gpuEfficiency,
-	}
-
-	return avgEfficiency, nodeEfficiencies
+	return nodeEfficiencies
 }
 
 func computePackingEfficiency(
 	nodeName string,
 	nodeSchedulingMetadata resources.NodeSchedulingMetadata,
-	reservedResources resources.NodeGroupResources) PackingEfficiency {
+	reservedResources resources.NodeGroupResources) *PackingEfficiency {
 
 	nodeReservedResources := nodeSchedulingMetadata.SchedulableResources.Copy()
 	nodeReservedResources.Sub(nodeSchedulingMetadata.AvailableResources)
@@ -96,7 +92,7 @@ func computePackingEfficiency(
 		gpuEfficiency = float64(nodeReservedResources.NvidiaGPU.Value()) / float64(normalizeResource(nodeSchedulableResources.NvidiaGPU.Value()))
 	}
 
-	return PackingEfficiency{
+	return &PackingEfficiency{
 		NodeName: nodeName,
 		CPU:      float64(nodeReservedResources.CPU.Value()) / float64(normalizeResource(nodeSchedulableResources.CPU.Value())),
 		Memory:   float64(nodeReservedResources.Memory.Value()) / float64(normalizeResource(nodeSchedulableResources.Memory.Value())),
@@ -109,4 +105,43 @@ func normalizeResource(resourceValue int64) int64 {
 		return 1
 	}
 	return resourceValue
+}
+
+// ComputeAvgPackingEfficiency calculate average packing efficiency for an entire cluster, given
+// packing efficiencies for individual nodes.
+func ComputeAvgPackingEfficiency(
+	nodeGroupSchedulingMetadata resources.NodeGroupSchedulingMetadata,
+	packingEfficiencies []*PackingEfficiency) AvgPackingEfficiency {
+
+	var cpuSum, gpuSum, memorySum float64
+	nodesWithGPU := 0
+
+	for _, packingEfficiency := range packingEfficiencies {
+		nodeName := packingEfficiency.NodeName
+		nodeSchedulingMetadata := nodeGroupSchedulingMetadata[nodeName]
+
+		cpuSum += packingEfficiency.CPU
+		memorySum += packingEfficiency.Memory
+
+		if nodeSchedulingMetadata.SchedulableResources.NvidiaGPU.Value() != 0 {
+			gpuSum += packingEfficiency.GPU
+			nodesWithGPU++
+		}
+	}
+
+	length := math.Max(float64(len(packingEfficiencies)), 1)
+	var gpuEfficiency float64
+	if nodesWithGPU == 0 {
+		gpuEfficiency = 1
+	} else {
+		gpuEfficiency = gpuSum / float64(nodesWithGPU)
+	}
+
+	avgEfficiency := AvgPackingEfficiency{
+		CPU:    cpuSum / length,
+		Memory: memorySum / length,
+		GPU:    gpuEfficiency,
+	}
+
+	return avgEfficiency
 }

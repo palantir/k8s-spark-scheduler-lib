@@ -25,16 +25,18 @@ import (
 type PackingResult struct {
 	DriverNode           string
 	ExecutorNodes        []string
-	AvgPackingEfficiency PackingEfficiency
+	AvgPackingEfficiency AvgPackingEfficiency
 	PackingEfficiencies  []*PackingEfficiency
 	HasCapacity          bool
 }
 
 func emptyPackingResult() *PackingResult {
 	return &PackingResult{
-		DriverNode:    "",
-		ExecutorNodes: nil,
-		HasCapacity:   false,
+		DriverNode:           "",
+		ExecutorNodes:        make([]string, 0),
+		HasCapacity:          false,
+		AvgPackingEfficiency: EmptyAvgPackingEfficiency(),
+		PackingEfficiencies:  make([]*PackingEfficiency, 0),
 	}
 }
 
@@ -73,7 +75,8 @@ func SparkBinPack(
 		executorNodes, ok := distributeExecutors(
 			ctx, executorResources, executorCount, executorNodePriorityOrder, nodesSchedulingMetadata, reserved)
 		if ok {
-			avgPackingEfficiency, packingEfficiencies := ComputePackingEfficiencies(nodesSchedulingMetadata, reserved)
+			packingEfficiencies := ComputePackingEfficiencies(nodesSchedulingMetadata, reserved)
+			avgPackingEfficiency := ComputeAvgPackingEfficiency(nodesSchedulingMetadata, packingEfficiencies)
 			return &PackingResult{
 				DriverNode:           driverNode,
 				ExecutorNodes:        executorNodes,

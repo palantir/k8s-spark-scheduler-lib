@@ -115,9 +115,11 @@ func TestMultiPackingEfficiency(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			avgEfficiency, _ := ComputePackingEfficiencies(
+			efficiencies := ComputePackingEfficiencies(
 				test.nodesGroupSchedulingMetadata,
 				test.reservedResources)
+
+			avgEfficiency := ComputeAvgPackingEfficiency(test.nodesGroupSchedulingMetadata, efficiencies)
 
 			if math.Abs(test.expectedCPUEfficiency-avgEfficiency.CPU) > CmpTolerance {
 				t.Fatalf("mismatch in expectedCPUEfficiency, expected: %v, got: %v", test.expectedCPUEfficiency, avgEfficiency.CPU)
