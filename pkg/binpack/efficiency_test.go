@@ -94,6 +94,7 @@ func TestMultiPackingEfficiency(t *testing.T) {
 		expectedCPUEfficiency        float64
 		expectedMemoryEfficiency     float64
 		expectedGPUEfficiency        float64
+		expectedMaxEfficiency        float64
 	}{{
 		name: "packing efficiency calculated correctly for multiple nodes",
 		nodesGroupSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
@@ -109,13 +110,15 @@ func TestMultiPackingEfficiency(t *testing.T) {
 				createNodeResources("9", "2", "1"),
 			}),
 		/*
-			cpu: 0.5 0.2 0.9 -> 0.53
-			mem: 0.5 0.7 0.2 -> 0.46
-			gpu: 1.0 0.0 0.5 -> 0.75
+				cpu: 0.5 0.2 0.9 -> 0.53
+				mem: 0.5 0.7 0.2 -> 0.46
+				gpu: 1.0 0.0 0.5 -> 0.75
+			    max: 1.0 0.7 0.9 -> 0.86
 		*/
-		expectedCPUEfficiency:    0.533333,
-		expectedMemoryEfficiency: 0.466666,
+		expectedCPUEfficiency:    (0.5 + 0.2 + 0.9) / 3,
+		expectedMemoryEfficiency: (0.5 + 0.7 + 0.2) / 3,
 		expectedGPUEfficiency:    0.75,
+		expectedMaxEfficiency:    (1.0 + 0.7 + 0.9) / 3,
 	}, {
 		name: "packing efficiency calculated correctly when there are no gpus",
 		nodesGroupSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
@@ -131,20 +134,20 @@ func TestMultiPackingEfficiency(t *testing.T) {
 				createNodeResources("9", "2", "0"),
 			}),
 		/*
-			cpu: 0.5 0.2 0.9 -> 0.53
-			mem: 0.5 0.7 0.2 -> 0.46
-			gpu: 0.0 0.0 0.0 -> 0.00
+				cpu: 0.5 0.2 0.9 -> 0.53
+				mem: 0.5 0.7 0.2 -> 0.46
+				gpu: 0.0 0.0 0.0 -> 1.00
+			    max: 0.5 0.7 0.9 -> 0.70
 		*/
-		expectedCPUEfficiency:    0.533333,
-		expectedMemoryEfficiency: 0.466666,
-		expectedGPUEfficiency:    0.0,
+		expectedCPUEfficiency:    (0.5 + 0.2 + 0.9) / 3,
+		expectedMemoryEfficiency: (0.5 + 0.7 + 0.2) / 3,
+		expectedGPUEfficiency:    1.0,
+		expectedMaxEfficiency:    0.7,
 	},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			expectedMax := math.Max(test.expectedGPUEfficiency, math.Max(test.expectedCPUEfficiency, test.expectedMemoryEfficiency))
-
 			efficiencies := ComputePackingEfficiencies(
 				test.nodesGroupSchedulingMetadata,
 				test.reservedResources)
@@ -162,8 +165,8 @@ func TestMultiPackingEfficiency(t *testing.T) {
 				t.Fatalf("mismatch in expectedGPUEfficiency, expected: %v, got: %v", test.expectedGPUEfficiency, avgEfficiency.GPU)
 			}
 
-			if math.Abs(expectedMax-avgEfficiency.Max()) > CmpTolerance {
-				t.Fatalf("mismatch in expectedMax, expected: %v, got: %v", expectedMax, avgEfficiency.Max())
+			if math.Abs(test.expectedMaxEfficiency-avgEfficiency.Max) > CmpTolerance {
+				t.Fatalf("mismatch in expectedMax, expected: %v, got: %v", test.expectedMaxEfficiency, avgEfficiency.Max)
 			}
 		})
 	}

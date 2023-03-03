@@ -26,11 +26,7 @@ type AvgPackingEfficiency struct {
 	CPU    float64
 	Memory float64
 	GPU    float64
-}
-
-// Max returns the highest packing efficiency of all resource types.
-func (p *AvgPackingEfficiency) Max() float64 {
-	return math.Max(p.GPU, math.Max(p.CPU, p.Memory))
+	Max    float64
 }
 
 // LessThan compares two average packing efficiencies. For a single packing we take the highest of the
@@ -38,7 +34,7 @@ func (p *AvgPackingEfficiency) Max() float64 {
 // is 0.81. One packing efficiency is deemed less efficient when its avg efficiency is lower than
 // the other's packing efficiency.
 func (p *AvgPackingEfficiency) LessThan(o AvgPackingEfficiency) bool {
-	return p.Max() < o.Max()
+	return p.Max < o.Max
 }
 
 // EmptyAvgPackingEfficiency returns a representation of a failed bin packing. Each individual resource
@@ -60,7 +56,7 @@ type PackingEfficiency struct {
 	GPU      float64
 }
 
-// Max returns the highest packing efficiency of all resource types.
+// Max returns the highest packing efficiency of CPU and Memory.
 func (p *PackingEfficiency) Max() float64 {
 	return math.Max(p.GPU, math.Max(p.CPU, p.Memory))
 }
@@ -118,7 +114,7 @@ func ComputeAvgPackingEfficiency(
 	nodeGroupSchedulingMetadata resources.NodeGroupSchedulingMetadata,
 	packingEfficiencies []*PackingEfficiency) AvgPackingEfficiency {
 
-	var cpuSum, gpuSum, memorySum float64
+	var cpuSum, gpuSum, memorySum, maxSum float64
 	nodesWithGPU := 0
 
 	for _, packingEfficiency := range packingEfficiencies {
@@ -132,12 +128,14 @@ func ComputeAvgPackingEfficiency(
 			gpuSum += packingEfficiency.GPU
 			nodesWithGPU++
 		}
+
+		maxSum += math.Max(packingEfficiency.GPU, math.Max(packingEfficiency.CPU, packingEfficiency.Memory))
 	}
 
 	length := math.Max(float64(len(packingEfficiencies)), 1)
 	var gpuEfficiency float64
 	if nodesWithGPU == 0 {
-		gpuEfficiency = 0
+		gpuEfficiency = 1
 	} else {
 		gpuEfficiency = gpuSum / float64(nodesWithGPU)
 	}
@@ -146,6 +144,7 @@ func ComputeAvgPackingEfficiency(
 		CPU:    cpuSum / length,
 		Memory: memorySum / length,
 		GPU:    gpuEfficiency,
+		Max:    maxSum / length,
 	}
 
 	return avgEfficiency
