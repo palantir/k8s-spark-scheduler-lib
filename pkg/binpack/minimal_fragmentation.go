@@ -51,6 +51,7 @@ func minimalFragmentation(
 	}
 
 	nodeCapacities := getNodeCapacities(nodePriorityOrder, nodeGroupSchedulingMetadata, reservedResources, executorResources)
+	nodeCapacities = filterOutNodesWithoutCapacity(nodeCapacities)
 	sort.SliceStable(nodeCapacities, func(i, j int) bool {
 		return nodeCapacities[i].capacity < nodeCapacities[j].capacity
 	})
@@ -136,7 +137,6 @@ func getNodeCapacity(available, reserved, singleExecutor *resources.Resources) i
 }
 
 // getNodeCapacities' return value is ordered according to nodePriorityOrder
-// note: this will only return nodes with non-zero capacity
 func getNodeCapacities(
 	nodePriorityOrder []string,
 	nodeGroupSchedulingMetadata resources.NodeGroupSchedulingMetadata,
@@ -153,18 +153,24 @@ func getNodeCapacities(
 				reserved = alreadyReserved
 			}
 
-			capacity := getNodeCapacity(nodeSchedulingMetadata.AvailableResources, reserved, singleExecutor)
-
-			if capacity > 0 {
-				capacities = append(capacities, nodeAndExecutorCapacity{
-					nodeName: nodeName,
-					capacity: capacity,
-				})
-			}
+			capacities = append(capacities, nodeAndExecutorCapacity{
+				nodeName,
+				getNodeCapacity(nodeSchedulingMetadata.AvailableResources, reserved, singleExecutor)
+			})
 		}
 	}
 
 	return capacities
+}
+
+func filterOutNodesWithoutCapacity(capacities []nodeAndExecutorCapacity) []nodeAndExecutorCapacity {
+	filteredCapacities := make([]nodeAndExecutorCapacity, 0, len(capacities))
+	for _, nodeWithCapacity := range capacities {
+		if nodeWithCapacity.capacity > 0 {
+			filteredCapacities = append(filteredCapacities, nodeWithCapacity)
+		}
+	}
+	return filteredCapacities
 }
 
 func min(a, b, c int) int {
