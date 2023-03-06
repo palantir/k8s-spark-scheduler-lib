@@ -90,11 +90,23 @@ type nodeAndExecutorCapacity struct {
 	capacity int
 }
 
-func getCapacitySingleDimension(available, reserved, required resource.Quantity) int {
+// getCapacityAgainstSingleDimension computes how many times we can fit the required quantity within (available-reserved)
+// e.g. if required = 4, available = 14, reserved = 1, we can fit 3 executors (3 * required <= available - reserved)
+//
+// This function is only useful to compare one dimension at a time, e.g. CPU or Memory, use getNodeCapacity to account
+// for all dimensions
+func getCapacityAgainstSingleDimension(available, reserved, required resource.Quantity) int {
+	if reserved.Cmp(available) == 1 {
+		// ideally this shouldn't happen (reserved > available), but should this happen, let's be resilient
+		return 0
+	}
+
 	if required.IsZero() {
+		// if we don't require any resources for this dimension, then we can fit an infinite number of executors
 		return math.MaxInt
 	}
 
+	// this basically computes: floor((available - reserved) / required)
 	return int(new(inf.Dec).QuoRound(
 		new(inf.Dec).Sub(available.AsDec(), reserved.AsDec()),
 		required.AsDec(),
@@ -104,17 +116,17 @@ func getCapacitySingleDimension(available, reserved, required resource.Quantity)
 }
 
 func getNodeCapacity(available, reserved, singleExecutor *resources.Resources) int {
-	capacityConsideringCPUOnly := getCapacitySingleDimension(
+	capacityConsideringCPUOnly := getCapacityAgainstSingleDimension(
 		available.CPU,
 		reserved.CPU,
 		singleExecutor.CPU,
 	)
-	capacityConsideringMemoryOnly := getCapacitySingleDimension(
+	capacityConsideringMemoryOnly := getCapacityAgainstSingleDimension(
 		available.Memory,
 		reserved.Memory,
 		singleExecutor.Memory,
 	)
-	capacityConsideringNvidiaGPUOnly := getCapacitySingleDimension(
+	capacityConsideringNvidiaGPUOnly := getCapacityAgainstSingleDimension(
 		available.NvidiaGPU,
 		reserved.NvidiaGPU,
 		singleExecutor.NvidiaGPU,

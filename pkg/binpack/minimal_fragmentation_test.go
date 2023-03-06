@@ -16,6 +16,7 @@ package binpack
 
 import (
 	"context"
+	"math"
 	"reflect"
 	"testing"
 
@@ -28,6 +29,29 @@ func TestMin(t *testing.T) {
 	assert.Equal(t, 1, min(1, 2, 3))
 	assert.Equal(t, 1, min(2, 1, 3))
 	assert.Equal(t, 1, min(2, 3, 1))
+}
+
+func TestGetCapacityAgainstSingleDimension(t *testing.T) {
+	assert.Equal(t, math.MaxInt, getCapacityAgainstSingleDimension(
+		*resource.NewQuantity(2, resource.DecimalSI),
+		*resource.NewQuantity(1, resource.DecimalSI),
+		*resource.NewQuantity(0, resource.DecimalSI),
+	))
+	assert.Equal(t, 2, getCapacityAgainstSingleDimension(
+		*resource.NewQuantity(2, resource.DecimalSI),
+		*resource.NewQuantity(0, resource.DecimalSI),
+		*resource.NewQuantity(1, resource.DecimalSI),
+	))
+	assert.Equal(t, 1, getCapacityAgainstSingleDimension(
+		*resource.NewQuantity(3, resource.DecimalSI),
+		*resource.NewQuantity(1, resource.DecimalSI),
+		*resource.NewQuantity(2, resource.DecimalSI),
+	))
+	assert.Equal(t, 0, getCapacityAgainstSingleDimension(
+		*resource.NewQuantity(2, resource.DecimalSI),
+		*resource.NewQuantity(3, resource.DecimalSI),
+		*resource.NewQuantity(1, resource.DecimalSI),
+	))
 }
 
 func TestGetNodeCapacity(t *testing.T) {
