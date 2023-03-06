@@ -89,7 +89,7 @@ func TestSingleAZTightlyPack(t *testing.T) {
 		expectedDriverNode: "n1_z1",
 		willFit:            false,
 	}, {
-		name:              "prefer a result with better packing for selected nodes",
+		name:              "prefer AZ with better packing",
 		driverResources:   resources.CreateResources(1, 0, 0),
 		executorResources: resources.CreateResources(0, 0, 0),
 		numExecutors:      0,
@@ -105,6 +105,26 @@ func TestSingleAZTightlyPack(t *testing.T) {
 		expectedDriverNode:     "n1_z2",
 		willFit:                true,
 		expectedExecutorCounts: map[string]int{},
+	}, {
+		// This test case is designed such that:
+		//  - first AZ yields better packing over AZ and better packing over all nodes
+		//  - second AZ yields better packing over the chosen (2) nodes but worse otherwise
+		name:              "prefer AZ with better packing per chosen nodes over higher cluster and higher avg AZ packings",
+		driverResources:   resources.CreateResources(1, 4, 0),
+		executorResources: resources.CreateResources(4, 1, 0),
+		numExecutors:      3,
+		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
+			"n1_z1": resources.CreateSchedulingMetadataWithTotals(3, 4, 6, 10, 0, 0, "z1"),
+			"n2_z1": resources.CreateSchedulingMetadataWithTotals(3, 10, 3, 10, 0, 0, "z1"),
+			"n3_z1": resources.CreateSchedulingMetadataWithTotals(16, 16, 16, 16, 0, 0, "z1"),
+			"n1_z3": resources.CreateSchedulingMetadataWithTotals(6, 10, 6, 10, 0, 0, "z3"),
+			"n2_z3": resources.CreateSchedulingMetadataWithTotals(10, 10, 4, 10, 0, 0, "z3"),
+			"n3_z3": resources.CreateSchedulingMetadataWithTotals(9, 10, 9, 10, 0, 0, "z3"),
+		}),
+		nodePriorityOrder:      []string{"n1_z1", "n2_z1", "n3_z1", "n1_z3", "n2_z3", "n3_z3"}, //"n1_z2", "n2_z2",
+		expectedDriverNode:     "n1_z3",
+		willFit:                true,
+		expectedExecutorCounts: map[string]int{"n1_z3": 1, "n2_z3": 2},
 	},
 	}
 
