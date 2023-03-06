@@ -38,6 +38,14 @@ var MinimalFragmentation = SparkBinPackFunction(func(
 // minimalFragmentation attempts to pack executors onto as few nodes as possible, ideally a single one
 // nodePriorityOrder is still used as a guideline, i.e. if an application can fit on multiple nodes, it will pick
 // the first eligible node according to nodePriorityOrder
+//
+// for instance if nodePriorityOrder = [a, b, c, d, e]
+// and we can fit 1 executor on a, 1 executor on b, 3 executors on c, 5 executors on d, 5 executors on e
+// and executorCount = 11, then we will return:
+// [d, d, d, d, d, e, e, e, e, e, a], true
+//
+// if instead we have executorCount = 6, then we will return:
+// [d, d, d, d, d, a], true
 func minimalFragmentation(
 	_ context.Context,
 	executorResources *resources.Resources,
@@ -70,17 +78,23 @@ func minimalFragmentation(
 
 		// we will need multiple nodes for scheduling, thus we'll try to schedule executors on nodes with the most capacity
 		maxCapacity := nodeCapacities[len(nodeCapacities)-1].capacity
-		position = sort.Search(len(nodeCapacities), func(i int) bool {
+		firstNodeWithMaxCapacityIdx := sort.Search(len(nodeCapacities), func(i int) bool {
 			return nodeCapacities[i].capacity >= maxCapacity
 		})
 
-		// we can skip the check on position since we know at least one node will be found
-		executorNodes = append(executorNodes, repeat(nodeCapacities[position].nodeName, maxCapacity)...)
-		executorCount -= maxCapacity
+		// the loop will exit because maxCapacity is always > 0
+		currentPos := firstNodeWithMaxCapacityIdx
+		for ; executorCount >= maxCapacity && currentPos < len(nodeCapacities); currentPos++ {
+			// we can skip the check on firstNodeWithMaxCapacityIdx since we know at least one node will be found
+			executorNodes = append(executorNodes, repeat(nodeCapacities[currentPos].nodeName, maxCapacity)...)
+			executorCount -= maxCapacity
+		}
 
-		// at least on paper, this is somewhat inefficient (but more readable than the alternative)
-		// to be optimized later if needed
-		nodeCapacities = append(nodeCapacities[:position], nodeCapacities[position+1:]...)
+		if executorCount == 0 {
+			return executorNodes, true
+		}
+
+		nodeCapacities = append(nodeCapacities[:firstNodeWithMaxCapacityIdx], nodeCapacities[currentPos:]...)
 	}
 
 	return nil, false
@@ -155,7 +169,7 @@ func getNodeCapacities(
 
 			capacities = append(capacities, nodeAndExecutorCapacity{
 				nodeName,
-				getNodeCapacity(nodeSchedulingMetadata.AvailableResources, reserved, singleExecutor)
+				getNodeCapacity(nodeSchedulingMetadata.AvailableResources, reserved, singleExecutor),
 			})
 		}
 	}
