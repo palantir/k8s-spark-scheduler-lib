@@ -15,6 +15,7 @@
 package resources
 
 import (
+	"math"
 	"time"
 
 	"github.com/palantir/k8s-spark-scheduler-lib/pkg/apis/sparkscheduler/v1beta2"
@@ -242,4 +243,37 @@ func (r *Resources) GreaterThan(other *Resources) bool {
 // Eq returns true if all of CPU, Memory and NvidiaGPU quantities are equal between this Resources object and other
 func (r *Resources) Eq(other *Resources) bool {
 	return r.CPU.Cmp(other.CPU) == 0 && r.Memory.Cmp(other.Memory) == 0 && r.NvidiaGPU.Cmp(other.NvidiaGPU) == 0
+}
+
+// CreateResources creates a new Resources struct with given specs.
+func CreateResources(cpu, memory, nvidiaGpus int64) *Resources {
+	return &Resources{
+		CPU:       *resource.NewQuantity(cpu, resource.DecimalSI),
+		Memory:    *resource.NewQuantity(memory, resource.BinarySI),
+		NvidiaGPU: *resource.NewQuantity(nvidiaGpus, resource.DecimalSI),
+	}
+}
+
+// CreateSchedulingMetadata creates a new NodeSchedulingMetadata struct with provided specs as the
+// available capacity. Total capacity is set to infinity. When total capacity is relevant use
+// CreateSchedulingMetadataWithTotals instead.
+func CreateSchedulingMetadata(cpu, memory, nvidiaGPU int64, zoneLabel string) *NodeSchedulingMetadata {
+	return &NodeSchedulingMetadata{
+		AvailableResources:   CreateResources(cpu, memory, nvidiaGPU),
+		SchedulableResources: CreateResources(math.MaxInt64, math.MaxInt64, math.MaxInt64),
+		ZoneLabel:            zoneLabel,
+	}
+}
+
+// CreateSchedulingMetadataWithTotals creates a new NodeSchedulingMetadata struct with the provided
+// usage and total capacity specs.
+func CreateSchedulingMetadataWithTotals(
+	availableCPU, cpuTotal, availableMemory, memoryTotal, availableNvidiaGPU, nvidiaGPUTotal int64,
+	zoneLabel string) *NodeSchedulingMetadata {
+
+	return &NodeSchedulingMetadata{
+		AvailableResources:   CreateResources(availableCPU, availableMemory, availableNvidiaGPU),
+		SchedulableResources: CreateResources(cpuTotal, memoryTotal, nvidiaGPUTotal),
+		ZoneLabel:            zoneLabel,
+	}
 }

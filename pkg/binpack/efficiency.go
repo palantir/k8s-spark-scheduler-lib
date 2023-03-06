@@ -20,7 +20,7 @@ import (
 	"github.com/palantir/k8s-spark-scheduler-lib/pkg/resources"
 )
 
-// AvgPackingEfficiency represents result packing efficiency per resource type for the entire cluster.
+// AvgPackingEfficiency represents result packing efficiency per resource type for a group of nodes.
 // Computed as average packing efficiency over all node efficiencies.
 type AvgPackingEfficiency struct {
 	CPU    float64
@@ -57,7 +57,7 @@ type PackingEfficiency struct {
 	GPU      float64
 }
 
-// Max returns the highest packing efficiency of CPU and Memory.
+// Max returns the highest packing efficiency of all resources.
 func (p *PackingEfficiency) Max() float64 {
 	return math.Max(p.GPU, math.Max(p.CPU, p.Memory))
 }
@@ -109,8 +109,8 @@ func normalizeResource(resourceValue int64) int64 {
 	return resourceValue
 }
 
-// ComputeAvgPackingEfficiency calculate average packing efficiency for an entire cluster, given
-// packing efficiencies for individual nodes.
+// ComputeAvgPackingEfficiency calculate average packing efficiency, given packing efficiencies for
+// individual nodes.
 func ComputeAvgPackingEfficiency(
 	nodeGroupSchedulingMetadata resources.NodeGroupSchedulingMetadata,
 	packingEfficiencies []*PackingEfficiency) AvgPackingEfficiency {

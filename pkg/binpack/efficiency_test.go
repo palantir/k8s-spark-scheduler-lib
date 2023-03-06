@@ -36,7 +36,7 @@ func TestSinglePackingEfficiency(t *testing.T) {
 	}{{
 		name:                     "packing efficiency calculated correctly for one node",
 		nodeName:                 "n1",
-		nodesSchedulingMetadata:  *createSchedulingMetadataWithTotals(6, 10, 8, 10, 1, 1, "zone1"),
+		nodesSchedulingMetadata:  *resources.CreateSchedulingMetadataWithTotals(6, 10, 8, 10, 1, 1, "zone1"),
 		reservedResources:        createNodeReservedResources("n1", "1", "1", "1"),
 		expectedCPUEfficiency:    0.5,
 		expectedMemoryEfficiency: 0.3,
@@ -98,9 +98,9 @@ func TestMultiPackingEfficiency(t *testing.T) {
 	}{{
 		name: "packing efficiency calculated correctly for multiple nodes",
 		nodesGroupSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
-			"n1": createSchedulingMetadataWithTotals(10, 10, 10, 10, 2, 2, "zone1"),
-			"n2": createSchedulingMetadataWithTotals(10, 10, 10, 10, 0, 0, "zone1"),
-			"n3": createSchedulingMetadataWithTotals(10, 10, 10, 10, 2, 2, "zone1"),
+			"n1": resources.CreateSchedulingMetadataWithTotals(10, 10, 10, 10, 2, 2, "zone1"),
+			"n2": resources.CreateSchedulingMetadataWithTotals(10, 10, 10, 10, 0, 0, "zone1"),
+			"n3": resources.CreateSchedulingMetadataWithTotals(10, 10, 10, 10, 2, 2, "zone1"),
 		}),
 		reservedResources: createReservedResources(
 			[]string{"n1", "n2", "n3"},
@@ -122,9 +122,9 @@ func TestMultiPackingEfficiency(t *testing.T) {
 	}, {
 		name: "packing efficiency calculated correctly when there are no gpus",
 		nodesGroupSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
-			"n1": createSchedulingMetadataWithTotals(10, 10, 10, 10, 0, 0, "zone1"),
-			"n2": createSchedulingMetadataWithTotals(10, 10, 10, 10, 0, 0, "zone1"),
-			"n3": createSchedulingMetadataWithTotals(10, 10, 10, 10, 0, 0, "zone1"),
+			"n1": resources.CreateSchedulingMetadataWithTotals(10, 10, 10, 10, 0, 0, "zone1"),
+			"n2": resources.CreateSchedulingMetadataWithTotals(10, 10, 10, 10, 0, 0, "zone1"),
+			"n3": resources.CreateSchedulingMetadataWithTotals(10, 10, 10, 10, 0, 0, "zone1"),
 		}),
 		reservedResources: createReservedResources(
 			[]string{"n1", "n2", "n3"},
