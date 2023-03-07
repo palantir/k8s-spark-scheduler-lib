@@ -32,68 +32,105 @@ func TestSingleAZTightlyPack(t *testing.T) {
 		nodePriorityOrder       []string
 		expectedDriverNode      string
 		willFit                 bool
-		expectedCounts          map[string]int
+		expectedExecutorCounts  map[string]int
 	}{{
 		name:              "picks the first zone when application fits entirely in either of the zones",
-		driverResources:   createResources(1, 3, 1),
-		executorResources: createResources(2, 5, 2),
+		driverResources:   resources.CreateResources(1, 3, 1),
+		executorResources: resources.CreateResources(2, 5, 2),
 		numExecutors:      2,
 		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
-			"n1_z1": createSchedulingMetadata(4, 5, 4, "z1"),
-			"n1_z2": createSchedulingMetadata(4, 8, 4, "z2"),
-			"n2_z1": createSchedulingMetadata(6, 15, 6, "z1"),
-			"n2_z2": createSchedulingMetadata(6, 20, 6, "z2"),
+			"n1_z1": resources.CreateSchedulingMetadata(4, 5, 4, "z1"),
+			"n1_z2": resources.CreateSchedulingMetadata(4, 8, 4, "z2"),
+			"n2_z1": resources.CreateSchedulingMetadata(6, 15, 6, "z1"),
+			"n2_z2": resources.CreateSchedulingMetadata(6, 20, 6, "z2"),
 		}),
-		nodePriorityOrder:  []string{"n1_z1", "n1_z2", "n2_z1", "n2_z2"},
-		expectedDriverNode: "n1_z1",
-		willFit:            true,
-		expectedCounts:     map[string]int{"n2_z1": 2},
+		nodePriorityOrder:      []string{"n1_z1", "n1_z2", "n2_z1", "n2_z2"},
+		expectedDriverNode:     "n1_z1",
+		willFit:                true,
+		expectedExecutorCounts: map[string]int{"n2_z1": 2},
 	}, {
 		name:              "picks the zone where application fits entirely",
-		driverResources:   createResources(1, 3, 1),
-		executorResources: createResources(2, 5, 1),
+		driverResources:   resources.CreateResources(1, 3, 1),
+		executorResources: resources.CreateResources(2, 5, 1),
 		numExecutors:      2,
 		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
-			"n1_z1": createSchedulingMetadata(4, 5, 1, "z1"),
-			"n1_z2": createSchedulingMetadata(4, 8, 2, "z2"),
-			"n2_z2": createSchedulingMetadata(6, 20, 10, "z2"),
+			"n1_z1": resources.CreateSchedulingMetadata(4, 5, 1, "z1"),
+			"n1_z2": resources.CreateSchedulingMetadata(4, 8, 2, "z2"),
+			"n2_z2": resources.CreateSchedulingMetadata(6, 20, 10, "z2"),
 		}),
-		nodePriorityOrder:  []string{"n1_z1", "n1_z2", "n2_z2"},
-		expectedDriverNode: "n1_z2",
-		willFit:            true,
-		expectedCounts:     map[string]int{"n1_z2": 1, "n2_z2": 1},
+		nodePriorityOrder:      []string{"n1_z1", "n1_z2", "n2_z2"},
+		expectedDriverNode:     "n1_z2",
+		willFit:                true,
+		expectedExecutorCounts: map[string]int{"n1_z2": 1, "n2_z2": 1},
 	}, {
 		name:              "Does not schedule if application does not fit entirely in one zone",
-		driverResources:   createResources(1, 1, 1),
-		executorResources: createResources(2, 1, 1),
+		driverResources:   resources.CreateResources(1, 1, 1),
+		executorResources: resources.CreateResources(2, 1, 1),
 		numExecutors:      2,
 		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
-			"n1_z1": createSchedulingMetadata(4, 5, 1, "z1"),
-			"n2_z1": createSchedulingMetadata(4, 6, 1, "z1"),
-			"n1_z2": createSchedulingMetadata(4, 7, 1, "z2"),
-			"n2_z2": createSchedulingMetadata(6, 7, 0, "z2"),
+			"n1_z1": resources.CreateSchedulingMetadata(4, 5, 1, "z1"),
+			"n2_z1": resources.CreateSchedulingMetadata(4, 6, 1, "z1"),
+			"n1_z2": resources.CreateSchedulingMetadata(4, 7, 1, "z2"),
+			"n2_z2": resources.CreateSchedulingMetadata(6, 7, 0, "z2"),
 		}),
 		nodePriorityOrder:  []string{"n1_z1", "n2_z1", "n1_z2", "n2_z2"},
 		expectedDriverNode: "n1_z1",
 		willFit:            false,
 	}, {
 		name:              "executor gpu does not fit",
-		driverResources:   createResources(1, 1, 1),
-		executorResources: createResources(1, 1, 1),
+		driverResources:   resources.CreateResources(1, 1, 1),
+		executorResources: resources.CreateResources(1, 1, 1),
 		numExecutors:      4,
 		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
-			"n1_z1": createSchedulingMetadata(4, 4, 4, "z1"),
-			"n1_z2": createSchedulingMetadata(128, 128, 0, "z2"),
+			"n1_z1": resources.CreateSchedulingMetadata(4, 4, 4, "z1"),
+			"n1_z2": resources.CreateSchedulingMetadata(128, 128, 0, "z2"),
 		}),
 		nodePriorityOrder:  []string{"n1_z1", "n1_z2"},
 		expectedDriverNode: "n1_z1",
 		willFit:            false,
+	}, {
+		name:              "prefer AZ with better packing",
+		driverResources:   resources.CreateResources(1, 0, 0),
+		executorResources: resources.CreateResources(0, 0, 0),
+		numExecutors:      0,
+		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
+			"n1_z1": resources.CreateSchedulingMetadataWithTotals(0, 10, 0, 0, 0, 0, "z1"),
+			"n2_z1": resources.CreateSchedulingMetadataWithTotals(0, 10, 0, 0, 0, 0, "z1"),
+			"n3_z1": resources.CreateSchedulingMetadataWithTotals(10, 10, 0, 0, 0, 0, "z1"),
+			"n1_z2": resources.CreateSchedulingMetadataWithTotals(9, 10, 0, 0, 0, 0, "z2"),
+			"n2_z2": resources.CreateSchedulingMetadataWithTotals(10, 10, 0, 0, 0, 0, "z2"),
+			"n3_z2": resources.CreateSchedulingMetadataWithTotals(10, 10, 0, 0, 0, 0, "z2"),
+		}),
+		nodePriorityOrder:      []string{"n1_z1", "n2_z1", "n3_z1", "n1_z2", "n2_z2", "n3_z2"},
+		expectedDriverNode:     "n1_z2",
+		willFit:                true,
+		expectedExecutorCounts: map[string]int{},
+	}, {
+		// This test case is designed such that:
+		//  - first AZ yields better packing over AZ and better packing over all nodes
+		//  - second AZ yields better packing over the chosen (2) nodes but worse otherwise
+		name:              "prefer AZ with better packing per chosen nodes over higher cluster and higher avg AZ packings",
+		driverResources:   resources.CreateResources(1, 4, 0),
+		executorResources: resources.CreateResources(4, 1, 0),
+		numExecutors:      3,
+		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
+			"n1_z1": resources.CreateSchedulingMetadataWithTotals(3, 4, 6, 10, 0, 0, "z1"),
+			"n2_z1": resources.CreateSchedulingMetadataWithTotals(3, 10, 3, 10, 0, 0, "z1"),
+			"n3_z1": resources.CreateSchedulingMetadataWithTotals(16, 16, 16, 16, 0, 0, "z1"),
+			"n1_z3": resources.CreateSchedulingMetadataWithTotals(6, 10, 6, 10, 0, 0, "z3"),
+			"n2_z3": resources.CreateSchedulingMetadataWithTotals(10, 10, 4, 10, 0, 0, "z3"),
+			"n3_z3": resources.CreateSchedulingMetadataWithTotals(9, 10, 9, 10, 0, 0, "z3"),
+		}),
+		nodePriorityOrder:      []string{"n1_z1", "n2_z1", "n3_z1", "n1_z3", "n2_z3", "n3_z3"}, //"n1_z2", "n2_z2",
+		expectedDriverNode:     "n1_z3",
+		willFit:                true,
+		expectedExecutorCounts: map[string]int{"n1_z3": 1, "n2_z3": 2},
 	},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			driver, executors, ok := SingleAZTightlyPack(
+			p := SingleAZTightlyPack(
 				context.Background(),
 				test.driverResources,
 				test.executorResources,
@@ -101,6 +138,7 @@ func TestSingleAZTightlyPack(t *testing.T) {
 				test.nodePriorityOrder,
 				test.nodePriorityOrder,
 				test.nodesSchedulingMetadata)
+			driver, executors, ok := p.DriverNode, p.ExecutorNodes, p.HasCapacity
 			if ok != test.willFit {
 				t.Fatalf("mismatch in willFit, expected: %v, got: %v", test.willFit, ok)
 			}
@@ -114,8 +152,8 @@ func TestSingleAZTightlyPack(t *testing.T) {
 			for _, node := range executors {
 				resultCounts[node]++
 			}
-			if test.expectedCounts != nil && !reflect.DeepEqual(resultCounts, test.expectedCounts) {
-				t.Fatalf("executor nodes are not equal, expected: %v, got: %v", test.expectedCounts, resultCounts)
+			if test.expectedExecutorCounts != nil && !reflect.DeepEqual(resultCounts, test.expectedExecutorCounts) {
+				t.Fatalf("executor nodes are not equal, expected: %v, got: %v", test.expectedExecutorCounts, resultCounts)
 			}
 		})
 	}
