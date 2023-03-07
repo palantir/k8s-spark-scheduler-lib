@@ -140,12 +140,12 @@ func TestMinimalFragmentation(t *testing.T) {
 		expectedCounts          map[string]int
 	}{{
 		name:              "application fits",
-		driverResources:   createResources(1, 3, 1),
-		executorResources: createResources(2, 5, 1),
+		driverResources:   resources.CreateResources(1, 3, 1),
+		executorResources: resources.CreateResources(2, 5, 1),
 		numExecutors:      2,
 		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
-			"n1": createSchedulingMetadata(5, 10, 2, "zone1"),
-			"n2": createSchedulingMetadata(4, 5, 1, "zone1"),
+			"n1": resources.CreateSchedulingMetadata(5, 10, 2, "zone1"),
+			"n2": resources.CreateSchedulingMetadata(4, 5, 1, "zone1"),
 		}),
 		nodePriorityOrder:  []string{"n1", "n2"},
 		expectedDriverNode: "n1",
@@ -153,12 +153,12 @@ func TestMinimalFragmentation(t *testing.T) {
 		expectedCounts:     map[string]int{"n1": 1, "n2": 1},
 	}, {
 		name:              "when not fitting on a single node, executors are first fitted on nodes with the most available resources",
-		driverResources:   createResources(1, 3, 0),
-		executorResources: createResources(2, 5, 0),
+		driverResources:   resources.CreateResources(1, 3, 0),
+		executorResources: resources.CreateResources(2, 5, 0),
 		numExecutors:      5,
 		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
-			"n1": createSchedulingMetadata(5, 25, 6, "zone1"),
-			"n2": createSchedulingMetadata(9, 24, 6, "zone1"),
+			"n1": resources.CreateSchedulingMetadata(5, 25, 6, "zone1"),
+			"n2": resources.CreateSchedulingMetadata(9, 24, 6, "zone1"),
 		}),
 		nodePriorityOrder:  []string{"n1", "n2"},
 		expectedDriverNode: "n1",
@@ -166,24 +166,24 @@ func TestMinimalFragmentation(t *testing.T) {
 		expectedCounts:     map[string]int{"n1": 1, "n2": 4},
 	}, {
 		name:              "successfully fits executor-less applications",
-		driverResources:   createResources(1, 3, 0),
-		executorResources: createResources(2, 5, 0),
+		driverResources:   resources.CreateResources(1, 3, 0),
+		executorResources: resources.CreateResources(2, 5, 0),
 		numExecutors:      0,
 		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
-			"n1": createSchedulingMetadata(5, 25, 6, "zone1"),
-			"n2": createSchedulingMetadata(5, 25, 6, "zone1"),
+			"n1": resources.CreateSchedulingMetadata(5, 25, 6, "zone1"),
+			"n2": resources.CreateSchedulingMetadata(5, 25, 6, "zone1"),
 		}),
 		nodePriorityOrder:  []string{"n1", "n2"},
 		expectedDriverNode: "n1",
 		willFit:            true,
 	}, {
 		name:              "successfully fits executor-less applications, and accounts for existing reservations",
-		driverResources:   createResources(1, 3, 0),
-		executorResources: createResources(2, 5, 0),
+		driverResources:   resources.CreateResources(1, 3, 0),
+		executorResources: resources.CreateResources(2, 5, 0),
 		numExecutors:      1,
 		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
-			"n1": createSchedulingMetadata(5, 25, 6, "zone1"),
-			"n2": createSchedulingMetadata(5, 25, 6, "zone1"),
+			"n1": resources.CreateSchedulingMetadata(5, 25, 6, "zone1"),
+			"n2": resources.CreateSchedulingMetadata(5, 25, 6, "zone1"),
 		}),
 		nodePriorityOrder:  []string{"n1", "n2"},
 		expectedDriverNode: "n1",
@@ -191,13 +191,13 @@ func TestMinimalFragmentation(t *testing.T) {
 		expectedCounts:     map[string]int{"n1": 1},
 	}, {
 		name:              "executors fit on a single node",
-		driverResources:   createResources(1, 3, 0),
-		executorResources: createResources(2, 5, 0),
+		driverResources:   resources.CreateResources(1, 3, 0),
+		executorResources: resources.CreateResources(2, 5, 0),
 		numExecutors:      5,
 		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
-			"n1": createSchedulingMetadata(10, 25, 6, "zone1"),
-			"n2": createSchedulingMetadata(5, 25, 6, "zone1"),
-			"n3": createSchedulingMetadata(20, 25, 6, "zone1"),
+			"n1": resources.CreateSchedulingMetadata(10, 25, 6, "zone1"),
+			"n2": resources.CreateSchedulingMetadata(5, 25, 6, "zone1"),
+			"n3": resources.CreateSchedulingMetadata(20, 25, 6, "zone1"),
 		}),
 		nodePriorityOrder:  []string{"n1", "n2", "n3"},
 		expectedDriverNode: "n1",
@@ -205,12 +205,12 @@ func TestMinimalFragmentation(t *testing.T) {
 		expectedCounts:     map[string]int{"n3": 5},
 	}, {
 		name:              "executors fit on the smallest nodes that can accommodate all of them",
-		driverResources:   createResources(1, 3, 0),
-		executorResources: createResources(2, 5, 0),
+		driverResources:   resources.CreateResources(1, 3, 0),
+		executorResources: resources.CreateResources(2, 5, 0),
 		numExecutors:      5,
 		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
-			"n1": createSchedulingMetadata(200, 500, 6, "zone1"),
-			"n2": createSchedulingMetadata(100, 250, 6, "zone1"),
+			"n1": resources.CreateSchedulingMetadata(200, 500, 6, "zone1"),
+			"n2": resources.CreateSchedulingMetadata(100, 250, 6, "zone1"),
 		}),
 		nodePriorityOrder:  []string{"n1", "n2", "n3"},
 		expectedDriverNode: "n1",
@@ -218,15 +218,15 @@ func TestMinimalFragmentation(t *testing.T) {
 		expectedCounts:     map[string]int{"n2": 5},
 	}, {
 		name:              "when available resources are equal, prefer nodes according to the requested priorities",
-		driverResources:   createResources(1, 3, 0),
-		executorResources: createResources(2, 5, 0),
+		driverResources:   resources.CreateResources(1, 3, 0),
+		executorResources: resources.CreateResources(2, 5, 0),
 		numExecutors:      5,
 		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
-			"n1": createSchedulingMetadata(10, 25, 6, "zone1"),
-			"n2": createSchedulingMetadata(5, 25, 6, "zone1"),
-			"n3": createSchedulingMetadata(20, 25, 6, "zone1"),
-			"n4": createSchedulingMetadata(20, 25, 6, "zone1"),
-			"n5": createSchedulingMetadata(20, 25, 6, "zone1"),
+			"n1": resources.CreateSchedulingMetadata(10, 25, 6, "zone1"),
+			"n2": resources.CreateSchedulingMetadata(5, 25, 6, "zone1"),
+			"n3": resources.CreateSchedulingMetadata(20, 25, 6, "zone1"),
+			"n4": resources.CreateSchedulingMetadata(20, 25, 6, "zone1"),
+			"n5": resources.CreateSchedulingMetadata(20, 25, 6, "zone1"),
 		}),
 		nodePriorityOrder:  []string{"n1", "n2", "n3", "n4", "n5"},
 		expectedDriverNode: "n1",
@@ -234,13 +234,13 @@ func TestMinimalFragmentation(t *testing.T) {
 		expectedCounts:     map[string]int{"n3": 5},
 	}, {
 		name:              "picks the smallest node that fits the remaining executors",
-		driverResources:   createResources(1, 3, 0),
-		executorResources: createResources(2, 5, 0),
+		driverResources:   resources.CreateResources(1, 3, 0),
+		executorResources: resources.CreateResources(2, 5, 0),
 		numExecutors:      5,
 		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
-			"n1": createSchedulingMetadata(6, 30, 6, "zone1"),
-			"n2": createSchedulingMetadata(3, 30, 6, "zone1"),
-			"n3": createSchedulingMetadata(8, 30, 6, "zone1"),
+			"n1": resources.CreateSchedulingMetadata(6, 30, 6, "zone1"),
+			"n2": resources.CreateSchedulingMetadata(3, 30, 6, "zone1"),
+			"n3": resources.CreateSchedulingMetadata(8, 30, 6, "zone1"),
 		}),
 		nodePriorityOrder:  []string{"n1", "n2", "n3"},
 		expectedDriverNode: "n1",
@@ -248,23 +248,23 @@ func TestMinimalFragmentation(t *testing.T) {
 		expectedCounts:     map[string]int{"n2": 1, "n3": 4},
 	}, {
 		name:              "driver memory does not fit",
-		driverResources:   createResources(2, 4, 1),
-		executorResources: createResources(1, 1, 0),
+		driverResources:   resources.CreateResources(2, 4, 1),
+		executorResources: resources.CreateResources(1, 1, 0),
 		numExecutors:      1,
 		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
-			"n1": createSchedulingMetadata(2, 3, 1, "zone1"),
+			"n1": resources.CreateSchedulingMetadata(2, 3, 1, "zone1"),
 		}),
 		nodePriorityOrder: []string{"n1"},
 		willFit:           false,
 	}, {
 		name:              "application perfectly fits",
-		driverResources:   createResources(1, 2, 1),
-		executorResources: createResources(1, 1, 1),
+		driverResources:   resources.CreateResources(1, 2, 1),
+		executorResources: resources.CreateResources(1, 1, 1),
 		numExecutors:      40,
 		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
-			"n1": createSchedulingMetadata(13, 14, 13, "zone1"),
-			"n2": createSchedulingMetadata(12, 12, 12, "zone1"),
-			"n3": createSchedulingMetadata(16, 16, 16, "zone1"),
+			"n1": resources.CreateSchedulingMetadata(13, 14, 13, "zone1"),
+			"n2": resources.CreateSchedulingMetadata(12, 12, 12, "zone1"),
+			"n3": resources.CreateSchedulingMetadata(16, 16, 16, "zone1"),
 		}),
 		nodePriorityOrder:  []string{"n1", "n2", "n3"},
 		expectedDriverNode: "n1",
@@ -272,35 +272,35 @@ func TestMinimalFragmentation(t *testing.T) {
 		expectedCounts:     map[string]int{"n1": 12, "n2": 12, "n3": 16},
 	}, {
 		name:              "executor cpu do not fit",
-		driverResources:   createResources(1, 1, 0),
-		executorResources: createResources(1, 2, 1),
+		driverResources:   resources.CreateResources(1, 1, 0),
+		executorResources: resources.CreateResources(1, 2, 1),
 		numExecutors:      8,
 		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
-			"n1": createSchedulingMetadata(8, 20, 8, "zone1"),
+			"n1": resources.CreateSchedulingMetadata(8, 20, 8, "zone1"),
 		}),
 		nodePriorityOrder: []string{"n1"},
 		willFit:           false,
 	}, {
 		name:              "Fits when cluster has more nodes than executors",
-		driverResources:   createResources(1, 2, 1),
-		executorResources: createResources(2, 3, 2),
+		driverResources:   resources.CreateResources(1, 2, 1),
+		executorResources: resources.CreateResources(2, 3, 2),
 		numExecutors:      2,
 		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
-			"n1": createSchedulingMetadata(8, 20, 8, "zone1"),
-			"n2": createSchedulingMetadata(8, 20, 8, "zone1"),
-			"n3": createSchedulingMetadata(8, 20, 8, "zone1"),
+			"n1": resources.CreateSchedulingMetadata(8, 20, 8, "zone1"),
+			"n2": resources.CreateSchedulingMetadata(8, 20, 8, "zone1"),
+			"n3": resources.CreateSchedulingMetadata(8, 20, 8, "zone1"),
 		}),
 		nodePriorityOrder:  []string{"n1", "n2", "n3"},
 		expectedDriverNode: "n1",
 		willFit:            true,
 	}, {
 		name:              "executor gpu does not fit",
-		driverResources:   createResources(1, 1, 1),
-		executorResources: createResources(1, 1, 1),
+		driverResources:   resources.CreateResources(1, 1, 1),
+		executorResources: resources.CreateResources(1, 1, 1),
 		numExecutors:      4,
 		nodesSchedulingMetadata: resources.NodeGroupSchedulingMetadata(map[string]*resources.NodeSchedulingMetadata{
-			"n1_z1": createSchedulingMetadata(4, 4, 4, "z1"),
-			"n1_z2": createSchedulingMetadata(128, 128, 0, "z2"),
+			"n1_z1": resources.CreateSchedulingMetadata(4, 4, 4, "z1"),
+			"n1_z2": resources.CreateSchedulingMetadata(128, 128, 0, "z2"),
 		}),
 		nodePriorityOrder:  []string{"n1_z1", "n1_z2"},
 		expectedDriverNode: "n1_z1",
@@ -310,7 +310,7 @@ func TestMinimalFragmentation(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			driver, executors, ok := MinimalFragmentation(
+			packingResult := MinimalFragmentation(
 				context.Background(),
 				test.driverResources,
 				test.executorResources,
@@ -318,17 +318,17 @@ func TestMinimalFragmentation(t *testing.T) {
 				test.nodePriorityOrder,
 				test.nodePriorityOrder,
 				test.nodesSchedulingMetadata)
-			if ok != test.willFit {
-				t.Fatalf("mismatch in willFit, expected: %v, got: %v", test.willFit, ok)
+			if packingResult.HasCapacity != test.willFit {
+				t.Fatalf("mismatch in willFit, expected: %v, got: %v", test.willFit, packingResult.HasCapacity)
 			}
 			if !test.willFit {
 				return
 			}
-			if driver != test.expectedDriverNode {
-				t.Fatalf("mismatch in driver node, expected: %v, got: %v", test.expectedDriverNode, driver)
+			if packingResult.DriverNode != test.expectedDriverNode {
+				t.Fatalf("mismatch in driver node, expected: %v, got: %v", test.expectedDriverNode, packingResult.DriverNode)
 			}
 			resultCounts := map[string]int{}
-			for _, node := range executors {
+			for _, node := range packingResult.ExecutorNodes {
 				resultCounts[node]++
 			}
 			if test.expectedCounts != nil && !reflect.DeepEqual(resultCounts, test.expectedCounts) {

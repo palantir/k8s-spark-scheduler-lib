@@ -31,7 +31,7 @@ var MinimalFragmentation = SparkBinPackFunction(func(
 	driverResources, executorResources *resources.Resources,
 	executorCount int,
 	driverNodePriorityOrder, executorNodePriorityOrder []string,
-	nodesSchedulingMetadata resources.NodeGroupSchedulingMetadata) (string, []string, bool) {
+	nodesSchedulingMetadata resources.NodeGroupSchedulingMetadata) *PackingResult {
 	return SparkBinPack(ctx, driverResources, executorResources, executorCount, driverNodePriorityOrder, executorNodePriorityOrder, nodesSchedulingMetadata, minimalFragmentation)
 })
 
