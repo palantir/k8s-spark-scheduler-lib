@@ -22,6 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
+// NodeAndExecutorCapacity is a pair of node name and capacity (how many executors can it fit)
 type NodeAndExecutorCapacity struct {
 	NodeName string
 	Capacity int
@@ -52,6 +53,7 @@ func getCapacityAgainstSingleDimension(available, reserved, required resource.Qu
 	).UnscaledBig().Int64())
 }
 
+// GetNodeCapacity returns how many singleExecutor can fit within available - reserved
 func GetNodeCapacity(available, reserved, singleExecutor *resources.Resources) int {
 	capacityConsideringCPUOnly := getCapacityAgainstSingleDimension(
 		available.CPU,
@@ -72,7 +74,7 @@ func GetNodeCapacity(available, reserved, singleExecutor *resources.Resources) i
 	return min(capacityConsideringCPUOnly, capacityConsideringMemoryOnly, capacityConsideringNvidiaGPUOnly)
 }
 
-// GetNodeCapacities' return value is ordered according to nodePriorityOrder
+// GetNodeCapacities return value is ordered according to nodePriorityOrder
 func GetNodeCapacities(
 	nodePriorityOrder []string,
 	nodeGroupSchedulingMetadata resources.NodeGroupSchedulingMetadata,
@@ -99,6 +101,7 @@ func GetNodeCapacities(
 	return capacities
 }
 
+// FilterOutNodesWithoutCapacity returns a slice of nodes with non-zero capacity
 func FilterOutNodesWithoutCapacity(capacities []NodeAndExecutorCapacity) []NodeAndExecutorCapacity {
 	filteredCapacities := make([]NodeAndExecutorCapacity, 0, len(capacities))
 	for _, nodeWithCapacity := range capacities {
