@@ -51,16 +51,40 @@ func minimalFragmentation(
 	nodePriorityOrder []string,
 	nodeGroupSchedulingMetadata resources.NodeGroupSchedulingMetadata,
 	reservedResources resources.NodeGroupResources) ([]string, bool) {
-	executorNodes := make([]string, 0, executorCount)
 	if executorCount == 0 {
+		executorNodes := make([]string, 0, 0)
 		return executorNodes, true
 	}
 
 	nodeCapacities := capacity.GetNodeCapacities(nodePriorityOrder, nodeGroupSchedulingMetadata, reservedResources, executorResources)
 	nodeCapacities = capacity.FilterOutNodesWithoutCapacity(nodeCapacities)
+	if len(nodeCapacities) == 0 {
+		return nil, false
+	}
+
 	sort.SliceStable(nodeCapacities, func(i, j int) bool {
 		return nodeCapacities[i].Capacity < nodeCapacities[j].Capacity
 	})
+	// assume the node with maxCapacity is empty
+	// also assumes all nodes are equally sized
+	maxCapacity := nodeCapacities[len(nodeCapacities)-1].Capacity
+	firstNodeWithMaxCapacityIdx := sort.Search(len(nodeCapacities), func(i int) bool {
+		return nodeCapacities[i].Capacity >= maxCapacity
+	})
+
+	// try to fit the app without relying on empty nodes
+	if executorNodes, ok := internalMinimalFragmentation(executorCount, nodeCapacities[:firstNodeWithMaxCapacityIdx]); ok {
+		return executorNodes, ok
+	}
+
+	// fall back to using empty nodes
+	return internalMinimalFragmentation(executorCount, nodeCapacities)
+}
+
+func internalMinimalFragmentation(
+	executorCount int,
+	nodeCapacities []capacity.NodeAndExecutorCapacity) ([]string, bool) {
+	executorNodes := make([]string, 0, executorCount)
 
 	// as long as we have nodes where we could schedule executors
 	for len(nodeCapacities) > 0 {
