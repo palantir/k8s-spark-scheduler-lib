@@ -75,12 +75,12 @@ func minimalFragmentation(
 		return nodeCapacities[i].Capacity < nodeCapacities[j].Capacity
 	})
 	maxCapacity := nodeCapacities[len(nodeCapacities)-1].Capacity
-	firstNodeWithMaxCapacityIdx := sort.Search(len(nodeCapacities), func(i int) bool {
-		return nodeCapacities[i].Capacity >= maxCapacity
-	})
-
 	if executorCount < maxCapacity {
-		// we can fit all of our executors on single 'empty' node without wasting resources, try scheduling w/o those nodes
+		firstNodeWithMaxCapacityIdx := sort.Search(len(nodeCapacities), func(i int) bool {
+			return nodeCapacities[i].Capacity >= maxCapacity
+		})
+
+		// we can't fit all of our executors on single 'empty' node without wasting resources, try scheduling w/o those nodes
 		if executorNodes, ok := internalMinimalFragmentation(executorCount, nodeCapacities[:firstNodeWithMaxCapacityIdx]); ok {
 			return executorNodes, ok
 		}
