@@ -14,39 +14,29 @@ homepath: &homepath
 gopath: &gopath
   gopath: /home/circleci/go
 
-working_directory: &working_directory
-    working_directory: /home/circleci/go/src/github.com/palantir/k8s-spark-scheduler-lib
-
 executors:
   circleci-go:
     docker:
       - image: cimg/go:1.18-browsers
-    <<: *working_directory
-
-all-tags-filter: &all-tags-filter
-  filters:
-    tags:
-      only: /.*/
+    working_directory: /home/circleci/go/src/github.com/palantir/k8s-spark-scheduler-lib
 
 workflows:
   version: 2
-  verify-test-dist-publish:
+  verify-test:
     jobs:
       - godel/verify:
           name: verify
           executor: circleci-go
           <<: *homepath
           <<: *gopath
-          <<: *all-tags-filter
       - godel/test:
-          name: test
+          name: test-go-latest
           executor: circleci-go
           <<: *homepath
           <<: *gopath
-          <<: *all-tags-filter
-      - godel/dist:
-          name: dist
+      - godel/test:
+          name: test-go-prev
           executor: circleci-go
           <<: *homepath
           <<: *gopath
-          <<: *all-tags-filter
+          go-prev-version: 1
