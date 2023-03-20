@@ -93,31 +93,33 @@ func minimalFragmentation(
 func internalMinimalFragmentation(
 	executorCount int,
 	nodeCapacities []capacity.NodeAndExecutorCapacity) ([]string, bool) {
+	nodeCapacitiesCopy := make([]capacity.NodeAndExecutorCapacity, 0, len(nodeCapacities))
+	nodeCapacitiesCopy = append(nodeCapacitiesCopy, nodeCapacities...)
 	executorNodes := make([]string, 0, executorCount)
 
 	// as long as we have nodes where we could schedule executors
-	for len(nodeCapacities) > 0 {
+	for len(nodeCapacitiesCopy) > 0 {
 		// pick the first node that could fit all the executors (if there's one)
-		position := sort.Search(len(nodeCapacities), func(i int) bool {
-			return nodeCapacities[i].Capacity >= executorCount
+		position := sort.Search(len(nodeCapacitiesCopy), func(i int) bool {
+			return nodeCapacitiesCopy[i].Capacity >= executorCount
 		})
 
-		if position != len(nodeCapacities) {
+		if position != len(nodeCapacitiesCopy) {
 			// we found a node that has the required capacity, schedule everything there and we're done
-			return append(executorNodes, repeat(nodeCapacities[position].NodeName, executorCount)...), true
+			return append(executorNodes, repeat(nodeCapacitiesCopy[position].NodeName, executorCount)...), true
 		}
 
 		// we will need multiple nodes for scheduling, thus we'll try to schedule executors on nodes with the most capacity
-		maxCapacity := nodeCapacities[len(nodeCapacities)-1].Capacity
-		firstNodeWithMaxCapacityIdx := sort.Search(len(nodeCapacities), func(i int) bool {
-			return nodeCapacities[i].Capacity >= maxCapacity
+		maxCapacity := nodeCapacitiesCopy[len(nodeCapacitiesCopy)-1].Capacity
+		firstNodeWithMaxCapacityIdx := sort.Search(len(nodeCapacitiesCopy), func(i int) bool {
+			return nodeCapacitiesCopy[i].Capacity >= maxCapacity
 		})
 
 		// the loop will exit because maxCapacity is always > 0
 		currentPos := firstNodeWithMaxCapacityIdx
-		for ; executorCount >= maxCapacity && currentPos < len(nodeCapacities); currentPos++ {
+		for ; executorCount >= maxCapacity && currentPos < len(nodeCapacitiesCopy); currentPos++ {
 			// we can skip the check on firstNodeWithMaxCapacityIdx since we know at least one node will be found
-			executorNodes = append(executorNodes, repeat(nodeCapacities[currentPos].NodeName, maxCapacity)...)
+			executorNodes = append(executorNodes, repeat(nodeCapacitiesCopy[currentPos].NodeName, maxCapacity)...)
 			executorCount -= maxCapacity
 		}
 
@@ -125,7 +127,7 @@ func internalMinimalFragmentation(
 			return executorNodes, true
 		}
 
-		nodeCapacities = append(nodeCapacities[:firstNodeWithMaxCapacityIdx], nodeCapacities[currentPos:]...)
+		nodeCapacitiesCopy = append(nodeCapacitiesCopy[:firstNodeWithMaxCapacityIdx], nodeCapacitiesCopy[currentPos:]...)
 	}
 
 	return nil, false
