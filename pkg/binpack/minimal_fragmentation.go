@@ -38,6 +38,8 @@ var MinimalFragmentation = SparkBinPackFunction(func(
 // the first eligible node according to nodePriorityOrder. additionally, minimalFragmentation will attempt to avoid
 // mostly empty nodes unless those are required for scheduling or they provide a perfect fit, see a couple examples below.
 //
+// 'mostly' empty nodes are currently defined as the ones having capacity >= (executor count + max capacity) / 2
+//
 // for instance if nodePriorityOrder = [a, b, c, d, e, f]
 // and we can fit 1 executor on a, 1 executor on b, 3 executors on c, 5 executors on d, 5 executors on e, 17 executors on f
 // and executorCount = 11, then we will return:
@@ -76,12 +78,13 @@ func minimalFragmentation(
 	})
 	maxCapacity := nodeCapacities[len(nodeCapacities)-1].Capacity
 	if executorCount < maxCapacity {
-		firstNodeWithMaxCapacityIdx := sort.Search(len(nodeCapacities), func(i int) bool {
-			return nodeCapacities[i].Capacity >= maxCapacity
+		targetCapacity := (executorCount + maxCapacity) / 2
+		firstNodeWithAtLeastTargetCapacity := sort.Search(len(nodeCapacities), func(i int) bool {
+			return nodeCapacities[i].Capacity >= targetCapacity
 		})
 
-		// we can't fit all of our executors on single 'empty' node without wasting resources, try scheduling w/o those nodes
-		if executorNodes, ok := internalMinimalFragmentation(executorCount, nodeCapacities[:firstNodeWithMaxCapacityIdx]); ok {
+		// try scheduling on a subset of nodes that excludes the 'emptiest' nodes
+		if executorNodes, ok := internalMinimalFragmentation(executorCount, nodeCapacities[:firstNodeWithAtLeastTargetCapacity]); ok {
 			return executorNodes, ok
 		}
 	}
