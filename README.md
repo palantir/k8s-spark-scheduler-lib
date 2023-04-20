@@ -1,3 +1,7 @@
+# Archived
+
+This project is no longer maintained.
+
 # Kubernetes Spark Scheduler Lib
 
 [![CircleCI](https://circleci.com/gh/palantir/k8s-spark-scheduler-lib.svg?style=svg)](https://circleci.com/gh/palantir/k8s-spark-scheduler-lib)
