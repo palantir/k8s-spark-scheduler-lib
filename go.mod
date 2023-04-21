@@ -1,6 +1,6 @@
 module github.com/palantir/k8s-spark-scheduler-lib
 
-go 1.19
+go 1.20
 
 require (
 	github.com/google/go-cmp v0.5.6
